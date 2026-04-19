@@ -1,0 +1,72 @@
+Metadata-Version: 2.4
+Name: pois-project
+Version: 0.1.0
+Summary: CS8.401 Principles of Information Security assignment scaffold
+Author: POIS Team
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# CS8.401 POIS Project Scaffold
+
+This repository is a **team scaffold** for all programming assignments (PA#0 to PA#20).
+It is designed so 5 teammates can work **sequentially** with minimal merge conflicts.
+
+## What This Scaffold Gives You
+
+- A consistent Python package structure for all crypto assignments.
+- One wrapper CLI to coordinate who works on what next.
+- A dependency-aware task queue (PA lineage preserved).
+- Stubs for every PA module so implementation can start immediately.
+
+## Team Workflow (Sequential)
+
+1. Check status:
+
+```bash
+python -m pois.cli status
+```
+
+2. Claim next available task:
+
+```bash
+python -m pois.cli next --member Kushal
+```
+
+3. Implement in the relevant PA module.
+4. Mark done when tests pass:
+
+```bash
+python -m pois.cli complete --member Kushal --task PA01
+```
+
+## Assignment Ownership (5 group members)
+
+- Diganta: PA00, PA01, PA02, PA03
+- Kushal: PA04, PA05, PA06, PA07
+- Nilkanta: PA08, PA09, PA10, PA11
+- Rohit: PA12, PA13, PA14, PA15
+- Srinjoy: PA16, PA17, PA18, PA19, PA20
+
+## Important Rules Included
+
+- No external cryptographic library substitutions in primitive chain.
+- Every PA module is pre-created and can be filled incrementally.
+- Unimplemented parts raise `NotImplementedError` by default.
+
+## Directory Map
+
+- `src/pois/assignments/`: PA-by-PA implementation files.
+- `src/pois/`: wrapper CLI, workflow, task registry, shared interfaces.
+- `workflow/tasks.json`: dependency graph and ownership map.
+- `webapp/`: placeholder folder for PA#0 React app.
+
+## Quick Start
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+python -m pois.cli init
+python -m pois.cli status
+```
+

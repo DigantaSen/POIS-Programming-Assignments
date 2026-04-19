@@ -1,0 +1,130 @@
+{
+  "tasks": [
+    {
+      "task_id": "PA00",
+      "title": "Minicrypt Clique Web Explorer scaffold",
+      "owner": "Diganta",
+      "deps": []
+    },
+    {
+      "task_id": "PA01",
+      "title": "OWF and PRG",
+      "owner": "Diganta",
+      "deps": []
+    },
+    {
+      "task_id": "PA02",
+      "title": "PRF via GGM",
+      "owner": "Diganta",
+      "deps": ["PA01"]
+    },
+    {
+      "task_id": "PA03",
+      "title": "CPA-secure symmetric encryption",
+      "owner": "Diganta",
+      "deps": ["PA02"]
+    },
+    {
+      "task_id": "PA04",
+      "title": "Modes of operation",
+      "owner": "Kushal",
+      "deps": ["PA03"]
+    },
+    {
+      "task_id": "PA05",
+      "title": "Message Authentication Codes",
+      "owner": "Kushal",
+      "deps": ["PA02"]
+    },
+    {
+      "task_id": "PA06",
+      "title": "CCA-secure symmetric encryption",
+      "owner": "Kushal",
+      "deps": ["PA03", "PA05"]
+    },
+    {
+      "task_id": "PA07",
+      "title": "Merkle-Damgard transform",
+      "owner": "Kushal",
+      "deps": []
+    },
+    {
+      "task_id": "PA08",
+      "title": "DLP-based CRHF",
+      "owner": "Nilkanta",
+      "deps": ["PA07"]
+    },
+    {
+      "task_id": "PA09",
+      "title": "Birthday attack",
+      "owner": "Nilkanta",
+      "deps": ["PA08"]
+    },
+    {
+      "task_id": "PA10",
+      "title": "HMAC and HMAC-based CCA encryption",
+      "owner": "Nilkanta",
+      "deps": ["PA03", "PA08"]
+    },
+    {
+      "task_id": "PA11",
+      "title": "Diffie-Hellman key exchange",
+      "owner": "Nilkanta",
+      "deps": ["PA13"]
+    },
+    {
+      "task_id": "PA12",
+      "title": "Textbook RSA and PKCS#1 v1.5",
+      "owner": "Rohit",
+      "deps": ["PA13"]
+    },
+    {
+      "task_id": "PA13",
+      "title": "Miller-Rabin primality testing",
+      "owner": "Rohit",
+      "deps": []
+    },
+    {
+      "task_id": "PA14",
+      "title": "CRT and breaking textbook RSA",
+      "owner": "Rohit",
+      "deps": ["PA12", "PA13"]
+    },
+    {
+      "task_id": "PA15",
+      "title": "Digital signatures",
+      "owner": "Rohit",
+      "deps": ["PA12"]
+    },
+    {
+      "task_id": "PA16",
+      "title": "ElGamal public-key cryptosystem",
+      "owner": "Srinjoy",
+      "deps": ["PA11"]
+    },
+    {
+      "task_id": "PA17",
+      "title": "CCA-secure PKC",
+      "owner": "Srinjoy",
+      "deps": ["PA15", "PA16"]
+    },
+    {
+      "task_id": "PA18",
+      "title": "Oblivious Transfer",
+      "owner": "Srinjoy",
+      "deps": ["PA16"]
+    },
+    {
+      "task_id": "PA19",
+      "title": "Secure AND gate",
+      "owner": "Srinjoy",
+      "deps": ["PA18"]
+    },
+    {
+      "task_id": "PA20",
+      "title": "All 2-party secure computation",
+      "owner": "Srinjoy",
+      "deps": ["PA18", "PA19"]
+    }
+  ]
+}

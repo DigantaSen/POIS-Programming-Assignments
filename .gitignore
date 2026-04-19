@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Runtime artifacts
+workflow/state.json
+
+# OS
+.DS_Store
+
+# Web build artifacts
+webapp/node_modules/
+webapp/dist/
+=
