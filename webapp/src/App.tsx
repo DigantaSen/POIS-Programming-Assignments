@@ -17,6 +17,9 @@ import Pa01Panel from "./Pa01Panel";
 import Pa02Panel from "./Pa02Panel";
 import Pa03Panel from "./Pa03Panel";
 import Pa04Panel from "./Pa04Panel";
+import Pa05Panel from "./Pa05Panel";
+import Pa06Panel from "./Pa06Panel";
+import Pa07Panel from "./Pa07Panel";
 
 function buildStatusLabel(step: { implemented: boolean; duePa?: string }): string {
   if (step.implemented) {
@@ -86,10 +89,10 @@ function ReductionSteps({ traces }: { traces: ReductionTraceItem[] }) {
   );
 }
 
-type AppTab = "pa00" | "pa01" | "pa02" | "pa03" | "pa04";
+type AppTab = "pa00" | "pa01" | "pa02" | "pa03" | "pa04" | "pa05" | "pa06" | "pa07";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>("pa04");
+  const [activeTab, setActiveTab] = useState<AppTab>("pa07");
   const [foundation, setFoundation] = useState<FoundationId>("AES");
   const [direction, setDirection] = useState<DirectionMode>("forward");
   const [primitiveA, setPrimitiveA] = useState<PrimitiveId>("PRF");
@@ -200,6 +203,30 @@ export default function App() {
       <nav className="tab-nav" aria-label="Assignment tabs">
         <button
           type="button"
+          id="tab-pa07"
+          className={`tab-btn${activeTab === "pa07" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa07")}
+        >
+          PA #7 &mdash; Merkle-Damgård
+        </button>
+        <button
+          type="button"
+          id="tab-pa06"
+          className={`tab-btn${activeTab === "pa06" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa06")}
+        >
+          PA #6 &mdash; CCA Enc
+        </button>
+        <button
+          type="button"
+          id="tab-pa05"
+          className={`tab-btn${activeTab === "pa05" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa05")}
+        >
+          PA #5 &mdash; MACs
+        </button>
+        <button
+          type="button"
           id="tab-pa04"
           className={`tab-btn${activeTab === "pa04" ? " active" : ""}`}
           onClick={() => setActiveTab("pa04")}
@@ -239,6 +266,15 @@ export default function App() {
           PA #0 &mdash; Reduction Explorer
         </button>
       </nav>
+
+      {/* PA07 Merkle-Damgård */}
+      {activeTab === "pa07" && <Pa07Panel />}
+
+      {/* PA06 CCA demo */}
+      {activeTab === "pa06" && <Pa06Panel />}
+
+      {/* PA05 MAC demo */}
+      {activeTab === "pa05" && <Pa05Panel />}
 
       {/* PA04 modes demo */}
       {activeTab === "pa04" && <Pa04Panel />}

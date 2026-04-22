@@ -56,8 +56,7 @@ const REDUCTION_EDGES: ReductionStep[] = [
     theorem: "PRF security implies existentially unforgeable MAC",
     security: "Adv_MAC(F) <= Adv_PRF(D) + q/2^n.",
     pa: "PA05",
-    implemented: false,
-    duePa: "PA05",
+    implemented: true,
   },
   {
     from: "PRF",
@@ -85,8 +84,7 @@ const REDUCTION_EDGES: ReductionStep[] = [
     theorem: "MAC forger can be used in PRF distinguishing game",
     security: "Adv_PRF(D) >= Adv_MAC(F) / q.",
     pa: "PA05",
-    implemented: false,
-    duePa: "PA05",
+    implemented: true,
     note: "Reverse-direction reduction used in backward mode demos.",
   },
   {
