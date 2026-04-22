@@ -34,11 +34,9 @@ function nodeR(isLeaf: boolean, isActive: boolean): number {
 function GGMTreeSVG({
   nodes,
   depth,
-  queryBits,
 }: {
   nodes: GGMTreeNode[];
   depth: number;
-  queryBits: string;
 }) {
   const svgH = TOP_PAD + depth * LEVEL_H + 30 + 36;
   const nodeMap = new Map(nodes.map((n) => [n.path, n]));
@@ -378,7 +376,7 @@ export default function Pa02Panel() {
           <>
             {showFull ? (
               <div className="pa02-svg-wrapper">
-                <GGMTreeSVG nodes={nodes} depth={depth} queryBits={queryBits} />
+                <GGMTreeSVG nodes={nodes} depth={depth} />
               </div>
             ) : (
               <PathView nodes={nodes} queryBits={queryBits} />

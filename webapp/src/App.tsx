@@ -16,6 +16,7 @@ import { buildProofSummary, findReverseHint, reduce, runReductionTrace } from ".
 import Pa01Panel from "./Pa01Panel";
 import Pa02Panel from "./Pa02Panel";
 import Pa03Panel from "./Pa03Panel";
+import Pa04Panel from "./Pa04Panel";
 
 function buildStatusLabel(step: { implemented: boolean; duePa?: string }): string {
   if (step.implemented) {
@@ -85,10 +86,10 @@ function ReductionSteps({ traces }: { traces: ReductionTraceItem[] }) {
   );
 }
 
-type AppTab = "pa00" | "pa01" | "pa02" | "pa03";
+type AppTab = "pa00" | "pa01" | "pa02" | "pa03" | "pa04";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>("pa01");
+  const [activeTab, setActiveTab] = useState<AppTab>("pa04");
   const [foundation, setFoundation] = useState<FoundationId>("AES");
   const [direction, setDirection] = useState<DirectionMode>("forward");
   const [primitiveA, setPrimitiveA] = useState<PrimitiveId>("PRF");
@@ -199,6 +200,14 @@ export default function App() {
       <nav className="tab-nav" aria-label="Assignment tabs">
         <button
           type="button"
+          id="tab-pa04"
+          className={`tab-btn${activeTab === "pa04" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa04")}
+        >
+          PA #4 &mdash; Modes
+        </button>
+        <button
+          type="button"
           id="tab-pa03"
           className={`tab-btn${activeTab === "pa03" ? " active" : ""}`}
           onClick={() => setActiveTab("pa03")}
@@ -230,6 +239,9 @@ export default function App() {
           PA #0 &mdash; Reduction Explorer
         </button>
       </nav>
+
+      {/* PA04 modes demo */}
+      {activeTab === "pa04" && <Pa04Panel />}
 
       {/* PA03 CPA demo */}
       {activeTab === "pa03" && <Pa03Panel />}

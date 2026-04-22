@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/domain.ts","./src/foundations.ts","./src/main.tsx","./src/pa01demo.ts","./src/routing.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/pa01panel.tsx","./src/pa02panel.tsx","./src/pa03panel.tsx","./src/pa04panel.tsx","./src/domain.ts","./src/enc.ts","./src/foundations.ts","./src/ggm.ts","./src/main.tsx","./src/modes.ts","./src/prg.ts","./src/routing.ts"],"version":"5.9.3"}

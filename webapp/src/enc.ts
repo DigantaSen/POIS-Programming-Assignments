@@ -17,7 +17,6 @@ import { ggmEvaluate } from "./ggm";
 
 const PRF_DEPTH = 8;
 const BLOCK_BYTES = 4;
-const NONCE_MOD = 256n;
 const MASK32 = 0xffff_ffffn;
 
 // ---------------------------------------------------------------------------
