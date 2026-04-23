@@ -32,4 +32,5 @@ src/pois/assignments/pa20.py
 src/pois_project.egg-info/PKG-INFO
 src/pois_project.egg-info/SOURCES.txt
 src/pois_project.egg-info/dependency_links.txt
+src/pois_project.egg-info/requires.txt
 src/pois_project.egg-info/top_level.txt
