@@ -20,6 +20,10 @@ import Pa04Panel from "./Pa04Panel";
 import Pa05Panel from "./Pa05Panel";
 import Pa06Panel from "./Pa06Panel";
 import Pa07Panel from "./Pa07Panel";
+import Pa08Panel from "./Pa08Panel";
+import Pa09Panel from "./Pa09Panel";
+import Pa10Panel from "./Pa10Panel";
+import Pa11Panel from "./Pa11Panel";
 
 function buildStatusLabel(step: { implemented: boolean; duePa?: string }): string {
   if (step.implemented) {
@@ -89,10 +93,22 @@ function ReductionSteps({ traces }: { traces: ReductionTraceItem[] }) {
   );
 }
 
-type AppTab = "pa00" | "pa01" | "pa02" | "pa03" | "pa04" | "pa05" | "pa06" | "pa07";
+type AppTab =
+  | "pa00"
+  | "pa01"
+  | "pa02"
+  | "pa03"
+  | "pa04"
+  | "pa05"
+  | "pa06"
+  | "pa07"
+  | "pa08"
+  | "pa09"
+  | "pa10"
+  | "pa11";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>("pa07");
+  const [activeTab, setActiveTab] = useState<AppTab>("pa11");
   const [foundation, setFoundation] = useState<FoundationId>("AES");
   const [direction, setDirection] = useState<DirectionMode>("forward");
   const [primitiveA, setPrimitiveA] = useState<PrimitiveId>("PRF");
@@ -203,6 +219,38 @@ export default function App() {
       <nav className="tab-nav" aria-label="Assignment tabs">
         <button
           type="button"
+          id="tab-pa11"
+          className={`tab-btn${activeTab === "pa11" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa11")}
+        >
+          PA #11 &mdash; DH + MITM
+        </button>
+        <button
+          type="button"
+          id="tab-pa10"
+          className={`tab-btn${activeTab === "pa10" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa10")}
+        >
+          PA #10 &mdash; HMAC
+        </button>
+        <button
+          type="button"
+          id="tab-pa09"
+          className={`tab-btn${activeTab === "pa09" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa09")}
+        >
+          PA #9 &mdash; Birthday Attack
+        </button>
+        <button
+          type="button"
+          id="tab-pa08"
+          className={`tab-btn${activeTab === "pa08" ? " active" : ""}`}
+          onClick={() => setActiveTab("pa08")}
+        >
+          PA #8 &mdash; CRHF
+        </button>
+        <button
+          type="button"
           id="tab-pa07"
           className={`tab-btn${activeTab === "pa07" ? " active" : ""}`}
           onClick={() => setActiveTab("pa07")}
@@ -266,6 +314,14 @@ export default function App() {
           PA #0 &mdash; Reduction Explorer
         </button>
       </nav>
+
+      {activeTab === "pa11" && <Pa11Panel />}
+
+      {activeTab === "pa10" && <Pa10Panel />}
+
+      {activeTab === "pa09" && <Pa09Panel />}
+
+      {activeTab === "pa08" && <Pa08Panel />}
 
       {/* PA07 Merkle-Damgård */}
       {activeTab === "pa07" && <Pa07Panel />}

@@ -11,6 +11,10 @@ This repository currently has working implementations for:
 - PA05 (MACs: PRF-MAC, CBC-MAC, EUF-CMA game, length-extension demo)
 - PA06 (CCA-secure Encrypt-then-MAC)
 - PA07 (Merkle-Damgard transform)
+- PA08 (DLP-style compression hash over Merkle-Damgard)
+- PA09 (Birthday attacks: naive and Floyd variants)
+- PA10 (HMAC + Encrypt-then-HMAC + length-extension demo)
+- PA11 (Diffie-Hellman + MITM demonstration)
 
 ---
 
@@ -26,7 +30,11 @@ This repository currently has working implementations for:
 | PA05 | Implemented |
 | PA06 | Implemented |
 | PA07 | Implemented |
-| PA08-PA20 | Stubs / pending |
+| PA08 | Implemented |
+| PA09 | Implemented |
+| PA10 | Implemented |
+| PA11 | Implemented |
+| PA12-PA20 | Stubs / pending |
 
 Note: PA05 includes an HMAC forward stub intentionally deferred to PA10.
 
@@ -45,10 +53,11 @@ src/pois/
 
 webapp/
   src/
-    App.tsx               # Tab container (PA00-PA07 panels)
-    Pa01Panel.tsx ... Pa07Panel.tsx
+    App.tsx               # Tab container (PA00-PA11 panels)
+    Pa01Panel.tsx ... Pa11Panel.tsx
     foundations.ts, routing.ts
     prg.ts, ggm.ts, enc.ts, modes.ts, mac.ts, cca.ts, merkle.ts
+    pa08hash.ts, pa09birthday.ts, pa10hmac.ts, pa11dh.ts
 ```
 
 ---
@@ -65,7 +74,7 @@ webapp/
 ```bash
 cd POIS-Programming-Assignments
 
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 
@@ -99,6 +108,10 @@ python -c "from pois.assignments.pa04 import PA04; print(PA04().run_demo())"
 python -c "from pois.assignments.pa05 import PA05; print(PA05().run_demo())"
 python -c "from pois.assignments.pa06 import PA06; print(PA06().run_demo())"
 python -c "from pois.assignments.pa07 import PA07; print(PA07().run_demo())"
+python -c "from pois.assignments.pa08 import PA08; print(PA08().run_demo())"
+python -c "from pois.assignments.pa09 import PA09; print(PA09().run_demo())"
+python -c "from pois.assignments.pa10 import PA10; print(PA10().run_demo())"
+python -c "from pois.assignments.pa11 import PA11; print(PA11().run_demo())"
 ```
 
 Or through the assignment runner:
