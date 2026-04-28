@@ -34,7 +34,11 @@ This repository currently has working implementations for:
 | PA09 | Implemented |
 | PA10 | Implemented |
 | PA11 | Implemented |
-| PA12-PA20 | Stubs / pending |
+| PA12 | Implemented |
+| PA13 | Implemented |
+| PA14 | Implemented |
+| PA15 | Implemented |
+| PA16-PA20 | Stubs / pending |
 
 Note: PA05 includes an HMAC forward stub intentionally deferred to PA10.
 
@@ -112,6 +116,10 @@ python -c "from pois.assignments.pa08 import PA08; print(PA08().run_demo())"
 python -c "from pois.assignments.pa09 import PA09; print(PA09().run_demo())"
 python -c "from pois.assignments.pa10 import PA10; print(PA10().run_demo())"
 python -c "from pois.assignments.pa11 import PA11; print(PA11().run_demo())"
+python -c "from pois.assignments.pa12 import PA12; print(PA12().run_demo())"
+python -c "from pois.assignments.pa13 import PA13; print(PA13().run_demo())"
+python -c "from pois.assignments.pa14 import PA14; print(PA14().run_demo())"
+python -c "from pois.assignments.pa15 import PA15; print(PA15().run_demo())"
 ```
 
 Or through the assignment runner:
