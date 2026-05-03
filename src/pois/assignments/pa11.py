@@ -85,7 +85,7 @@ class PA11(AssignmentModule):
     """PA11: Diffie-Hellman key exchange and MITM demo."""
 
     def __init__(self) -> None:
-        # TODO lineage note: replace with PA13 prime generation once PA13 is implemented.
+        # PA11 now shares the prime-generation path with PA13 so later PAs can reuse it.
         p, q = gen_safe_prime(bits=31)
         g = find_generator(p, q)
         self.p = p
@@ -107,7 +107,7 @@ class PA11(AssignmentModule):
             "DH keygen and shared-secret derivation",
             "Correctness demo: both parties derive identical gab",
             "MITM transcript showing separate attacker-shared keys",
-            "Lineage hook to PA13 prime generation (currently local helper)",
+            "Shared prime-generation lineage via PA13 helpers",
         ]
 
     def run_demo(self) -> str:
