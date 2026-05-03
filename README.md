@@ -3,6 +3,7 @@
 Interactive implementation of the Minicrypt reduction chain with a Python backend and a React webapp.
 
 This repository currently has working implementations for:
+
 - PA00 (Reduction Explorer scaffold)
 - PA01 (OWF and PRG)
 - PA02 (PRF via GGM)
@@ -15,30 +16,49 @@ This repository currently has working implementations for:
 - PA09 (Birthday attacks: naive and Floyd variants)
 - PA10 (HMAC + Encrypt-then-HMAC + length-extension demo)
 - PA11 (Diffie-Hellman + MITM demonstration)
+- PA12 (Textbook RSA and PKCS#1 v1.5)
+- PA13 (Miller-Rabin primality testing)
+- PA14 (CRT and breaking textbook RSA)
+- PA15 (Digital signatures)
+- PA16 (ElGamal public-key cryptosystem)
+- PA17 (CCA-secure public-key encryption)
+- PA18 (Oblivious transfer)
+- PA19 (Secure AND gate)
+- PA20 (All 2-party secure computation)
 
 ---
 
 ## Assignment Status
 
-| Assignment | Status |
-|---|---|
-| PA00 | Implemented |
-| PA01 | Implemented |
-| PA02 | Implemented |
-| PA03 | Implemented |
-| PA04 | Implemented |
-| PA05 | Implemented |
-| PA06 | Implemented |
-| PA07 | Implemented |
-| PA08 | Implemented |
-| PA09 | Implemented |
-| PA10 | Implemented |
-| PA11 | Implemented |
-| PA12 | Implemented |
-| PA13 | Implemented |
-| PA14 | Implemented |
-| PA15 | Implemented |
-| PA16-PA20 | Stubs / pending |
+| Assignment | Status      |
+| ---------- | ----------- |
+| PA00       | Implemented |
+| PA01       | Implemented |
+| PA02       | Implemented |
+| PA03       | Implemented |
+| PA04       | Implemented |
+| PA05       | Implemented |
+| PA06       | Implemented |
+| PA07       | Implemented |
+| PA08       | Implemented |
+| PA09       | Implemented |
+| PA10       | Implemented |
+| PA11       | Implemented |
+| PA12       | Implemented |
+| PA13       | Implemented |
+| PA14       | Implemented |
+| PA15       | Implemented |
+| PA16       | Implemented |
+| PA17       | Implemented |
+| PA18       | Implemented |
+| PA19       | Implemented |
+| PA20       | Implemented |
+
+## Progress Snapshot
+
+- The backend demos are now implemented through PA20.
+- The webapp exposes PA16-PA20 as individual tabs alongside PA00-PA15.
+- The live frontend build and dev server have been validated on localhost:5173.
 
 Note: PA05 includes an HMAC forward stub intentionally deferred to PA10.
 
@@ -57,8 +77,9 @@ src/pois/
 
 webapp/
   src/
-    App.tsx               # Tab container (PA00-PA11 panels)
+    App.tsx               # Tab container (PA00-PA20 panels)
     Pa01Panel.tsx ... Pa11Panel.tsx
+    Pa16To20Panel.tsx
     foundations.ts, routing.ts
     prg.ts, ggm.ts, enc.ts, modes.ts, mac.ts, cca.ts, merkle.ts
     pa08hash.ts, pa09birthday.ts, pa10hmac.ts, pa11dh.ts
@@ -120,6 +141,11 @@ python -c "from pois.assignments.pa12 import PA12; print(PA12().run_demo())"
 python -c "from pois.assignments.pa13 import PA13; print(PA13().run_demo())"
 python -c "from pois.assignments.pa14 import PA14; print(PA14().run_demo())"
 python -c "from pois.assignments.pa15 import PA15; print(PA15().run_demo())"
+python -c "from pois.assignments.pa16 import PA16; print(PA16().run_demo())"
+python -c "from pois.assignments.pa17 import PA17; print(PA17().run_demo())"
+python -c "from pois.assignments.pa18 import PA18; print(PA18().run_demo())"
+python -c "from pois.assignments.pa19 import PA19; print(PA19().run_demo())"
+python -c "from pois.assignments.pa20 import PA20; print(PA20().run_demo())"
 ```
 
 Or through the assignment runner:
@@ -160,6 +186,7 @@ python -m pois.cli complete --member Kushal --task PA07
 ```
 
 Workflow files:
+
 - workflow/tasks.json (task dependencies and ownership)
 - workflow/state.json (claimed/completed/history)
 

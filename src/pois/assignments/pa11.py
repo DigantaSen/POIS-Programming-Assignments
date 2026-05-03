@@ -3,52 +3,18 @@ from __future__ import annotations
 import secrets
 
 from .base import AssignmentInfo, AssignmentModule
+from .pa13 import gen_prime, miller_rabin
 
 
-def _miller_rabin(n: int, rounds: int = 8) -> bool:
-    if n < 2:
-        return False
-    small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-    for p in small_primes:
-        if n % p == 0:
-            return n == p
-
-    d = n - 1
-    s = 0
-    while d % 2 == 0:
-        d //= 2
-        s += 1
-
-    for _ in range(rounds):
-        a = secrets.randbelow(n - 3) + 2
-        x = pow(a, d, n)
-        if x in (1, n - 1):
-            continue
-        for _ in range(s - 1):
-            x = pow(x, 2, n)
-            if x == n - 1:
-                break
-        else:
-            return False
-    return True
-
-
-def _gen_prime(bits: int) -> int:
+def gen_safe_prime(bits: int = 31) -> tuple[int, int]:
     while True:
-        cand = secrets.randbits(bits) | (1 << (bits - 1)) | 1
-        if _miller_rabin(cand):
-            return cand
-
-
-def _gen_safe_prime(bits: int = 31) -> tuple[int, int]:
-    while True:
-        q = _gen_prime(bits - 1)
+        q = gen_prime(bits - 1)
         p = 2 * q + 1
-        if _miller_rabin(p):
+        if miller_rabin(p):
             return p, q
 
 
-def _find_generator(p: int, q: int) -> int:
+def find_generator(p: int, q: int) -> int:
     # For safe prime p=2q+1, g is generator if g^2 != 1 and g^q != 1 (mod p).
     while True:
         g = secrets.randbelow(p - 3) + 2
@@ -120,8 +86,8 @@ class PA11(AssignmentModule):
 
     def __init__(self) -> None:
         # TODO lineage note: replace with PA13 prime generation once PA13 is implemented.
-        p, q = _gen_safe_prime(bits=31)
-        g = _find_generator(p, q)
+        p, q = gen_safe_prime(bits=31)
+        g = find_generator(p, q)
         self.p = p
         self.q = q
         self.g = g
