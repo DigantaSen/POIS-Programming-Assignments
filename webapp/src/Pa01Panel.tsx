@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TestResult,
+  SEED_BITS,
   bitsToHex,
   prgExpand,
   randomSeedHex,
@@ -131,9 +132,11 @@ export default function Pa01Panel() {
     setTestRunning(true);
     // Use a small timeout so the button state can render before computation
     setTimeout(() => {
-      // Run tests on a longer stream for statistical significance
+      // Expand a longer stream and strip the seed prefix before testing,
+      // matching Python's randomness_tests() which slices full_bits[seed_bits:]
       const longBits = prgExpand(seedHex, 2048);
-      setTestResults(runAllTests(longBits));
+      const streamBits = longBits.slice(SEED_BITS); // skip n-bit seed prefix
+      setTestResults(runAllTests(streamBits));
       setTestRunning(false);
     }, 30);
   }, [isValidHex, prgBits, seedHex]);
@@ -233,7 +236,8 @@ export default function Pa01Panel() {
         <div className="pa01-output-header">
           <span className="pa01-output-title">G(s) — PRG Output</span>
           <span className="pa01-output-meta">
-            {prgBits.length} bits · {prgBits.length / 8} bytes
+            {SEED_BITS} + {prgBits.length - SEED_BITS} = {prgBits.length} bits
+            &nbsp;·&nbsp; n + ℓ
           </span>
         </div>
 

@@ -10,22 +10,28 @@
  * Cost: n OWF evaluations (one modpow each) per query — fast even for n=8.
  */
 
-import { owfEvaluate, Q } from "./prg";
-
-const Q_HALF: bigint = Q >> 1n;
+import { Q, SEED_BITS, prgExpand } from "./prg";
 
 // ---------------------------------------------------------------------------
 // Core GGM primitives
 // ---------------------------------------------------------------------------
 
 /**
- * G(s) → (G_0(s), G_1(s)):  two pseudorandom children via OWF.
- *   G_0(s) = g^{s}        mod p
- *   G_1(s) = g^{s+Q/2}    mod p   (shifted — independent of G_0)
+ * G(s) → (G_0(s), G_1(s)):  two SEED_BITS-wide pseudorandom children.
+ *
+ * Uses the PA#1 PRG (iterative hardcore-bit construction) to produce
+ * 2*SEED_BITS bits, then splits them — matching the Python _expand().
+ *   stream = PRG(s, 2*SEED_BITS)
+ *   G_0(s) = stream[0 .. SEED_BITS)
+ *   G_1(s) = stream[SEED_BITS .. 2*SEED_BITS)
  */
 export function ggmExpand(s: bigint): [bigint, bigint] {
-  const g0 = owfEvaluate(s % Q);
-  const g1 = owfEvaluate(((s % Q) + Q_HALF) % Q);
+  const seedHex = (s % Q).toString(16);
+  // prgExpand returns SEED_BITS prefix + extraBits stream
+  const allBits = prgExpand(seedHex, 2 * SEED_BITS);
+  const stream = allBits.slice(SEED_BITS);          // skip seed-prefix
+  const g0 = BigInt("0b" + stream.slice(0, SEED_BITS));
+  const g1 = BigInt("0b" + stream.slice(SEED_BITS, 2 * SEED_BITS));
   return [g0, g1];
 }
 
@@ -69,10 +75,17 @@ export interface GGMTreeNode {
  * Build all nodes in a GGM tree of given depth (BFS order).
  * For depth n: 2^(n+1) - 1 total nodes, 2^n leaves.
  */
+/**
+ * Build nodes of a GGM tree (BFS order).
+ *
+ * @param pathOnly  When true, only expand on-path nodes (for n>4 path view).
+ *                  Keeps performance acceptable for deep trees.
+ */
 export function buildGGMTree(
   keyHex: string,
   depth: number,
   queryBits: string,
+  pathOnly = false,
 ): GGMTreeNode[] {
   const cleaned = keyHex.replace(/[^0-9a-fA-F]/g, "") || "0";
   const rootValue = BigInt("0x" + cleaned) % Q;
@@ -90,6 +103,8 @@ export function buildGGMTree(
     nodes.push({ path, value, level, index, onPath, isLeaf: level === depth });
 
     if (level < depth) {
+      // In pathOnly mode skip off-path branches — cuts cost from O(2^n) to O(n)
+      if (pathOnly && !onPath) continue;
       const [g0, g1] = ggmExpand(value);
       queue.push({ path: path + "0", value: g0 });
       queue.push({ path: path + "1", value: g1 });

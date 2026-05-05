@@ -133,8 +133,14 @@ class GGMPRF:
 
         prf_ratio = prf_bits.count("1") / len(prf_bits)
         rnd_ratio = rnd_bits.count("1") / len(rnd_bits)
-        prf_pval = float(NistLikeSuite.frequency_monobit(prf_bits)["p_value"])
-        rnd_pval = float(NistLikeSuite.frequency_monobit(rnd_bits)["p_value"])
+        prf_tests = NistLikeSuite.run_all(prf_bits)
+        rnd_tests = NistLikeSuite.run_all(rnd_bits)
+
+        def _fmt(tests: list[dict]) -> list[dict]:
+            return [
+                {"name": t["name"], "p_value": float(t["p_value"]), "pass": bool(t["pass"])}
+                for t in tests
+            ]
 
         return {
             "queries": queries,
@@ -142,9 +148,10 @@ class GGMPRF:
             "prf_ones_ratio": prf_ratio,
             "random_ones_ratio": rnd_ratio,
             "statistical_distance": abs(prf_ratio - rnd_ratio),
-            "prf_freq_pvalue": prf_pval,
-            "random_freq_pvalue": rnd_pval,
-            "indistinguishable": abs(prf_ratio - rnd_ratio) < 0.05,
+            "prf_tests": _fmt(prf_tests),
+            "rnd_tests": _fmt(rnd_tests),
+            # All three NIST tests must pass for PRF to be deemed indistinguishable
+            "indistinguishable": all(t["pass"] for t in prf_tests),
         }
 
 
@@ -306,11 +313,14 @@ class PA02(AssignmentModule):
         lines += [
             "",
             f"  Distinguishing game (q={dist['queries']}, depth={dist['depth']}):",
-            f"    PRF 1-ratio  = {dist['prf_ones_ratio']:.4f}",
-            f"    RNG 1-ratio  = {dist['random_ones_ratio']:.4f}",
-            f"    |delta| = {dist['statistical_distance']:.4f}",
-            f"    Verdict: {'INDISTINGUISHABLE (PRF secure)' if dist['indistinguishable'] else 'DISTINGUISHABLE (check params)'}",
+            f"    PRF 1-ratio = {dist['prf_ones_ratio']:.4f}  |  RNG 1-ratio = {dist['random_ones_ratio']:.4f}",
+            f"    |delta|     = {dist['statistical_distance']:.4f}",
+            "    PRF NIST tests:",
         ]
+        for t in dist["prf_tests"]:
+            outcome = "PASS" if t["pass"] else "FAIL"
+            lines.append(f"      {t['name']}: {outcome}, p={t['p_value']:.6f}")
+        lines.append(f"    Verdict: {'INDISTINGUISHABLE (PRF secure)' if dist['indistinguishable'] else 'DISTINGUISHABLE (check params)'}")
 
         if self.aes.available:
             aes_out = self.aes.evaluate_hex(key.to_bytes(16, "big"), 0)

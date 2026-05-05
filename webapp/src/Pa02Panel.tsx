@@ -4,7 +4,6 @@ import {
   bigintToHex,
   buildGGMTree,
   ggmEvaluate,
-  ggmExpand,
 } from "./ggm";
 
 // ---------------------------------------------------------------------------
@@ -210,7 +209,8 @@ export default function Pa02Panel() {
   const { nodes, leaf } = useMemo(() => {
     if (!isKeyHexValid) return { nodes: [] as GGMTreeNode[], leaf: 0n };
     return {
-      nodes: buildGGMTree(keyHex, depth, queryBits),
+      // pathOnly=true for n>4: only traverse the query path (O(n) cost)
+      nodes: buildGGMTree(keyHex, depth, queryBits, depth > MAX_FULL_DEPTH),
       leaf: ggmEvaluate(keyHex, queryBits),
     };
   }, [keyHex, depth, queryBits, isKeyHexValid]);
@@ -252,14 +252,13 @@ export default function Pa02Panel() {
     setRawQuery(bits.join(""));
   };
 
-  // Quick "PRG from PRF" preview: G_0(k) and G_1(k) using ggmExpand
+  // PRG-from-PRF preview: G(k) = F_k(0^n) ‖ F_k(1^n)  (spec PA#2b)
   const prgPreview = useMemo(() => {
     if (!isKeyHexValid) return null;
-    const cleaned = keyHex.replace(/[^0-9a-fA-F]/g, "") || "0";
-    const rootVal = BigInt("0x" + cleaned);
-    const [g0, g1] = ggmExpand(rootVal);
+    const g0 = ggmEvaluate(keyHex, "0".repeat(depth));
+    const g1 = ggmEvaluate(keyHex, "1".repeat(depth));
     return { g0: bigintToHex(g0, 8), g1: bigintToHex(g1, 8) };
-  }, [keyHex, isKeyHexValid]);
+  }, [keyHex, depth, isKeyHexValid]);
 
   const showFull = depth <= MAX_FULL_DEPTH;
 

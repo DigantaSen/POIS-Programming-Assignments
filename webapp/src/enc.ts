@@ -39,9 +39,13 @@ function pkcs7Pad(data: Uint8Array): Uint8Array {
   return result;
 }
 
-/** Remove PKCS7 padding. */
+/** Remove PKCS7 padding (validates pad byte is in [1, BLOCK_BYTES]). */
 function pkcs7Unpad(data: Uint8Array): Uint8Array {
+  if (data.length === 0) throw new Error("Empty ciphertext");
   const padLen = data[data.length - 1];
+  if (padLen < 1 || padLen > BLOCK_BYTES || padLen > data.length) {
+    throw new Error(`Invalid PKCS7 padding byte: ${padLen}`);
+  }
   return data.slice(0, data.length - padLen);
 }
 
@@ -131,7 +135,7 @@ export function decryptText(
 export function xorHex(hex0: string, hex1: string): string {
   const len = Math.min(hex0.length, hex1.length);
   let result = "";
-  for (let i = 0; i < len - 1; i += 2) {
+  for (let i = 0; i < len; i += 2) {  // was: i < len - 1 (dropped last byte)
     const b = parseInt(hex0.slice(i, i + 2), 16) ^ parseInt(hex1.slice(i, i + 2), 16);
     result += b.toString(16).padStart(2, "0");
   }

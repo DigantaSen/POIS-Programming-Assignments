@@ -100,7 +100,7 @@ export const primitiveDuePa: Record<PrimitiveId, string> = {
   OWP: "PA01",
   PRG: "PA01",
   PRF: "PA02",
-  PRP: "PA02",
+  PRP: "PA04",
   ENC: "PA03",
   MAC: "PA05",
   CRHF: "PA08",

@@ -16,6 +16,7 @@
 export const P = 2147483867n; // safe prime  (2*Q + 1), fits in 32-bit
 export const Q = 1073741933n; // prime-order subgroup
 export const G = 4n;          // generator of prime-order subgroup
+export const SEED_BITS = 64;  // seed size in bits (matches Python backend)
 
 // ---------------------------------------------------------------------------
 // Modular exponentiation via BigInt (square-and-multiply)
@@ -72,17 +73,24 @@ function hardcoreBit(state: bigint): number {
 export function prgExpand(seedHex: string, extraBits: number): string {
   if (extraBits < 0) extraBits = 0;
 
-  // Parse hex seed → BigInt
+  // Parse hex seed → BigInt, normalised into the group
   const cleaned = seedHex.toLowerCase().replace(/[^0-9a-f]/g, "") || "0";
-  let state: bigint = BigInt("0x" + cleaned) % Q;
+  const seedInt: bigint = BigInt("0x" + cleaned) % Q;
 
-  // Build the bit string
-  let bits = "";
+  // Prepend the SEED_BITS-wide binary representation of the seed (n bits)
+  // so the total output is n + ℓ bits, matching the spec and Python backend.
+  const seedPrefix = seedInt.toString(2).padStart(SEED_BITS, "0");
+
+  // Iterative hard-core bit expansion: produce ℓ extra bits
+  let state = seedInt;
+  let expandedBits = "";
   for (let i = 0; i < extraBits; i++) {
     state = owfEvaluate(state);
-    bits += hardcoreBit(state).toString();
+    expandedBits += hardcoreBit(state).toString();
   }
-  return bits;
+
+  // Return seed prefix ‖ expanded bits  (total: SEED_BITS + extraBits)
+  return seedPrefix + expandedBits;
 }
 
 // ---------------------------------------------------------------------------

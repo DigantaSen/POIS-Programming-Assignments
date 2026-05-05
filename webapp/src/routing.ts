@@ -163,14 +163,14 @@ export function reduce(
   const prevEdge = new Map<PrimitiveId, ReductionStep>();
 
   while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
+    // queue.shift() is always defined here since length > 0
+    const current = queue.shift() as PrimitiveId;
 
     if (current === target) {
       const route = reconstructPath(prevNode, prevEdge, source, target);
-      return route.length === 0 ? null : route;
+      // reconstructPath returns [] on failure; distinguish from the
+      // source===target identity case (handled above before BFS starts).
+      return route.length > 0 ? route : null;
     }
 
     const edges = adjacency.get(current) ?? [];

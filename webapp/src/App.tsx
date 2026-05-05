@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
 	DirectionMode,
@@ -141,6 +141,17 @@ export default function App() {
 	const [keyHex, setKeyHex] = useState("00112233445566778899aabbccddeeff");
 	const [messageHex, setMessageHex] = useState("68656c6c6f706f69732d70613030");
 	const [proofOpen, setProofOpen] = useState(true);
+	const navRef = useRef<HTMLElement>(null);
+
+	// Scroll active tab into view on tab change
+	useEffect(() => {
+		const nav = navRef.current;
+		if (!nav) return;
+		const active = nav.querySelector<HTMLButtonElement>(".tab-btn.active");
+		if (active) {
+			active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+		}
+	}, [activeTab]);
 
 	const foundationModule = useMemo(
 		() => getFoundationModule(foundation),
@@ -261,7 +272,8 @@ export default function App() {
 	return (
 		<main className="app-shell">
 			{/* Tab navigation */}
-			<nav className="tab-nav" aria-label="Assignment tabs">
+			<div className="tab-nav-wrap">
+			<nav className="tab-nav" aria-label="Assignment tabs" ref={navRef}>
 				<button
 					type="button"
 					id="tab-pa00"
@@ -431,6 +443,7 @@ export default function App() {
 					PA #20 &mdash; MPC
 				</button>
 			</nav>
+			</div>
 
 			{activeTab === "pa11" && <Pa11Panel />}
 
