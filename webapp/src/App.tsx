@@ -29,6 +29,7 @@ import Pa08Panel from "./Pa08Panel";
 import Pa09Panel from "./Pa09Panel";
 import Pa10Panel from "./Pa10Panel";
 import Pa11Panel from "./Pa11Panel";
+import Pa12To15Panel from "./Pa12To15Panel";
 import Pa16To20Panel from "./Pa16To20Panel";
 
 function buildStatusLabel(step: {
@@ -121,6 +122,10 @@ type AppTab =
 	| "pa09"
 	| "pa10"
 	| "pa11"
+	| "pa12"
+	| "pa13"
+	| "pa14"
+	| "pa15"
 	| "pa16"
 	| "pa17"
 	| "pa18"
@@ -355,6 +360,38 @@ export default function App() {
 				</button>
 				<button
 					type="button"
+					id="tab-pa12"
+					className={`tab-btn${activeTab === "pa12" ? " active" : ""}`}
+					onClick={() => setActiveTab("pa12")}
+				>
+					PA #12 &mdash; RSA
+				</button>
+				<button
+					type="button"
+					id="tab-pa13"
+					className={`tab-btn${activeTab === "pa13" ? " active" : ""}`}
+					onClick={() => setActiveTab("pa13")}
+				>
+					PA #13 &mdash; Primality
+				</button>
+				<button
+					type="button"
+					id="tab-pa14"
+					className={`tab-btn${activeTab === "pa14" ? " active" : ""}`}
+					onClick={() => setActiveTab("pa14")}
+				>
+					PA #14 &mdash; CRT Attack
+				</button>
+				<button
+					type="button"
+					id="tab-pa15"
+					className={`tab-btn${activeTab === "pa15" ? " active" : ""}`}
+					onClick={() => setActiveTab("pa15")}
+				>
+					PA #15 &mdash; Signatures
+				</button>
+				<button
+					type="button"
 					id="tab-pa16"
 					className={`tab-btn${activeTab === "pa16" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa16")}
@@ -396,6 +433,11 @@ export default function App() {
 			</nav>
 
 			{activeTab === "pa11" && <Pa11Panel />}
+
+			{activeTab === "pa12" && <Pa12To15Panel assignment="pa12" />}
+			{activeTab === "pa13" && <Pa12To15Panel assignment="pa13" />}
+			{activeTab === "pa14" && <Pa12To15Panel assignment="pa14" />}
+			{activeTab === "pa15" && <Pa12To15Panel assignment="pa15" />}
 
 			{activeTab === "pa16" && <Pa16To20Panel assignment="pa16" />}
 

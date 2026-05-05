@@ -1017,6 +1017,7 @@ function Pa17Card() {
 			message: messageValue,
 			envelope,
 			tamperedEnvelope,
+			tamperedOracleResponse: null,
 			decrypted,
 			tamperedDecrypted,
 			plainChallenge,

@@ -79,6 +79,7 @@ webapp/
   src/
     App.tsx               # Tab container (PA00-PA20 panels)
     Pa01Panel.tsx ... Pa11Panel.tsx
+    Pa12To15Panel.tsx
     Pa16To20Panel.tsx
     foundations.ts, routing.ts
     prg.ts, ggm.ts, enc.ts, modes.ts, mac.ts, cca.ts, merkle.ts
