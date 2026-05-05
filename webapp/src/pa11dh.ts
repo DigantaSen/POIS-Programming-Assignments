@@ -23,15 +23,16 @@ const TOY_DH_PARAMS: DHParams = {
 };
 
 function modPow(base: number, exp: number, mod: number): number {
-  let b = base % mod;
-  let e = exp;
-  let acc = 1;
-  while (e > 0) {
-    if (e & 1) acc = (acc * b) % mod;
-    b = (b * b) % mod;
-    e >>= 1;
+  const modulus = BigInt(mod);
+  let b = BigInt(base) % modulus;
+  let e = BigInt(exp);
+  let acc = 1n;
+  while (e > 0n) {
+    if ((e & 1n) === 1n) acc = (acc * b) % modulus;
+    b = (b * b) % modulus;
+    e >>= 1n;
   }
-  return acc;
+  return Number(acc);
 }
 
 function randInt(lo: number, hi: number): number {
