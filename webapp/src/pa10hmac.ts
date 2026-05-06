@@ -90,3 +90,27 @@ export function randomKeyHex(): string {
 export function strBytes(s: string): Uint8Array {
   return textToBytes(s);
 }
+
+// --- SHA-256 based helpers (browser Web Crypto) ---
+
+async function sha256Bytes(data: Uint8Array): Promise<Uint8Array> {
+  const buf = await crypto.subtle.digest("SHA-256", data.buffer as ArrayBuffer);
+  return new Uint8Array(buf);
+}
+
+export async function hmacSha256TagHex(key: Uint8Array, message: Uint8Array): Promise<string> {
+  const cryptoKey = await crypto.subtle.importKey("raw", key.buffer as ArrayBuffer, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, message.buffer as ArrayBuffer);
+  return bytesToHex(new Uint8Array(sig));
+}
+
+export async function naiveSha256TagHex(key: Uint8Array, message: Uint8Array): Promise<string> {
+  const data = concatBytes(key, message);
+  const d = await sha256Bytes(data);
+  return bytesToHex(d);
+}
+
+export async function verifyHmacSha256(key: Uint8Array, msg: Uint8Array, tagHex: string): Promise<boolean> {
+  const t = await hmacSha256TagHex(key, msg);
+  return fixedTimeHexEqual(t, tagHex);
+}
