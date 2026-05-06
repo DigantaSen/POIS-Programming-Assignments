@@ -131,36 +131,23 @@ class PA18(AssignmentModule):
         pk0, pk1, state = ot_receiver_step1(1)
         ciphertexts = ot_sender_step(pk0, pk1, left, right)
         selected = ot_receiver_step2(state, ciphertexts[0], ciphertexts[1])
-        cheated = ot_attempt_other_decrypt(state, ciphertexts[0], ciphertexts[1])
-
-        trials = ot_correctness_trials(100)
 
         return "\n".join([
-            "PA18 demo active",
+            "PA18 demo active: OT receiver",
             "",
-            "  Sender public keys:",
-            f"    pk0 = {pk0}",
-            f"    pk1 = {pk1}",
+            "  Alice’s panel (left, greyed out):",
+            "    m0 = hidden",
+            "    m1 = hidden",
             "",
-            "  Ciphertexts sent to the receiver:",
-            f"    c0 = {ciphertexts[0]}",
-            f"    c1 = {ciphertexts[1]}",
-            f"    selected index = {state.choice}",
-            f"    recovered message = {selected!r}",
-            "",
-            "  Cheat attempt:",
-            f"    attempt to decrypt the other ciphertext -> {cheated!r}",
-            f"    correctness over 100 trials = {trials}/100",
+            "  Bob’s panel (right, interactive):",
+            f"    Choose {state.choice}",
+            f"    result m_b = {selected!r}",
             "",
             "  Message log:",
-            *[f"    {entry}" for entry in (
-                f"choice bit {state.choice}",
-                "receiver generated one honest public key and one random public key",
-                "sender encrypted both branches",
-                "receiver decrypted only the chosen branch",
-            )],
+            f"    1. key pairs generated: b = {state.choice}",
+            f"    2. (pk0; pk1) sent to Alice: pk0 = {pk0}, pk1 = {pk1}",
+            f"    3. C0 and C1 received: C0 = {ciphertexts[0]}, C1 = {ciphertexts[1]}",
+            f"    4. Cb decrypted: m_b = {selected!r}",
             "",
-            "  Conclusion:",
-            "    The sender encrypts both branches, but the receiver decrypts only",
-            "    the branch matched by the chosen input bit.",
+            f"  Result: m_b is revealed to Bob = {selected!r}",
         ])

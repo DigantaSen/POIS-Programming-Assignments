@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Pa16Assignment = "pa16" | "pa17" | "pa18" | "pa19" | "pa20";
 type Bit = 0 | 1;
@@ -98,15 +98,11 @@ class Circuit {
 	evaluate(aliceBits: Bit[], bobBits: Bit[]): Bit[] {
 		const inputs = [...aliceBits, ...bobBits, ...this.constantBits];
 		if (inputs.length !== this.inputCount) {
-			throw new Error(
-				`expected ${this.inputCount} input bits, got ${inputs.length}`,
-			);
+			throw new Error(`expected ${this.inputCount} input bits, got ${inputs.length}`);
 		}
-		const wires = new Array<Bit>(this.inputCount + this.gates.length * 4).fill(
-			0,
-		);
-		for (let i = 0; i < inputs.length; i += 1) {
-			wires[i] = inputs[i];
+		const wires = new Array<Bit>(this.inputCount + this.gates.length * 4).fill(0);
+		for (let index = 0; index < inputs.length; index += 1) {
+			wires[index] = inputs[index];
 		}
 		for (const gate of this.gates) {
 			const operandBits = gate.inputs.map((wire) => wires[wire] ?? 0);
@@ -119,15 +115,11 @@ class Circuit {
 	secureEvaluate(aliceBits: Bit[], bobBits: Bit[]): SecureEvalResult {
 		const inputs = [...aliceBits, ...bobBits, ...this.constantBits];
 		if (inputs.length !== this.inputCount) {
-			throw new Error(
-				`expected ${this.inputCount} input bits, got ${inputs.length}`,
-			);
+			throw new Error(`expected ${this.inputCount} input bits, got ${inputs.length}`);
 		}
-		const wires = new Array<Bit>(this.inputCount + this.gates.length * 4).fill(
-			0,
-		);
-		for (let i = 0; i < inputs.length; i += 1) {
-			wires[i] = inputs[i];
+		const wires = new Array<Bit>(this.inputCount + this.gates.length * 4).fill(0);
+		for (let index = 0; index < inputs.length; index += 1) {
+			wires[index] = inputs[index];
 		}
 
 		const gateLog: GateTrace[] = [];
@@ -136,10 +128,7 @@ class Circuit {
 		for (const gate of this.gates) {
 			const operandBits = gate.inputs.map((wire) => wires[wire] ?? 0) as Bit[];
 			if (gate.op === "AND") {
-				const transcript = secureAndWithTranscript(
-					operandBits[0],
-					operandBits[1],
-				);
+				const transcript = secureAndWithTranscript(operandBits[0], operandBits[1]);
 				wires[gate.output] = transcript.outputBit;
 				otCalls += 1;
 				gateLog.push({
@@ -148,15 +137,12 @@ class Circuit {
 					inputs: gate.inputs,
 					outputWire: gate.output,
 					outputBit: transcript.outputBit,
-					note: `OT-backed AND; ${transcript.transcript.join(" · ")}`,
+					note: "OT-backed AND",
 				});
 				continue;
 			}
 			if (gate.op === "XOR") {
-				const transcript = secureXorWithTranscript(
-					operandBits[0],
-					operandBits[1],
-				);
+				const transcript = secureXorWithTranscript(operandBits[0], operandBits[1]);
 				wires[gate.output] = transcript.outputBit;
 				gateLog.push({
 					gateId: gate.gateId,
@@ -231,15 +217,18 @@ interface Pa18Round {
 	state: OtState;
 	ciphertexts: [ElGamalCiphertext, ElGamalCiphertext];
 	selected: number;
-	cheated: number | null;
-	log: string[];
+	log: {
+		title: string;
+		detail: string;
+	}[];
 }
 
 interface Pa19TruthTableRow {
 	a: Bit;
 	b: Bit;
-	andOk: boolean;
-	xorOk: boolean;
+	outputBit: Bit;
+	expectedBit: Bit;
+	passed: boolean;
 	transcript: string;
 }
 
@@ -255,7 +244,7 @@ function randInt(min: number, max: number): number {
 }
 
 function hex(n: number): string {
-	return `0x${n.toString(16).toUpperCase()}`;
+	return String(n);
 }
 
 function modPow(base: number, exp: number, mod: number): number {
@@ -485,19 +474,6 @@ function obliviousTransfer(
 	};
 }
 
-function otCorrectnessTrials(trials: number = 100): number {
-	let successes = 0;
-	for (let index = 0; index < trials; index += 1) {
-		const choice = (randInt(0, 1) as Bit) ?? 0;
-		const m0 = randInt(1, 1200);
-		const m1 = randInt(1, 1200);
-		const transcript = obliviousTransfer([m0, m1], choice);
-		const expected = choice === 0 ? m0 : m1;
-		if (transcript.selectedMessage === expected) successes += 1;
-	}
-	return successes;
-}
-
 function secureAndWithTranscript(
 	aliceBit: Bit,
 	bobBit: Bit,
@@ -510,7 +486,11 @@ function secureAndWithTranscript(
 		outputBit,
 		receivedMessage: transcript.selectedMessage,
 		messages: [0, aliceBit],
-		transcript: transcript.log,
+		transcript: [
+			`Alice sets up OT messages (0, a) = (0, ${aliceBit})`,
+			`Bob runs OT receiver with choice b = ${bobBit}`,
+			`Bob receives m_b = a AND b = ${outputBit}`,
+		],
 	};
 }
 
@@ -543,18 +523,20 @@ function secureNot(aliceBit: Bit): Bit {
 	return aliceBit === 0 ? 1 : 0;
 }
 
-function verifyTruthTable(trials: number = 50): Pa19TruthTableRow[] {
+function verifyTruthTable(): Pa19TruthTableRow[] {
 	const rows: Pa19TruthTableRow[] = [];
 	for (const a of [0, 1] as Bit[]) {
 		for (const b of [0, 1] as Bit[]) {
-			let andOk = true;
-			let xorOk = true;
-			for (let index = 0; index < trials; index += 1) {
-				andOk = andOk && secureAnd(a, b) === (a & b);
-				xorOk = xorOk && secureXor(a, b) === (a ^ b);
-			}
-			const transcript = secureAndWithTranscript(a, b).transcript.join(" → ");
-			rows.push({ a, b, andOk, xorOk, transcript });
+			const result = secureAndWithTranscript(a, b);
+			const expectedBit = (a & b) as Bit;
+			rows.push({
+				a,
+				b,
+				outputBit: result.outputBit,
+				expectedBit,
+				passed: result.outputBit === expectedBit,
+				transcript: result.transcript.join(" → "),
+			});
 		}
 	}
 	return rows;
@@ -574,21 +556,21 @@ function orGate(
 ): number {
 	const andWire = nextWire;
 	gates.push({
-		gateId: `or_and_${nextWire}`,
+		gateId: `greater_and_${nextWire}`,
 		op: "AND",
 		inputs: [a, b],
 		output: andWire,
 	});
 	const xorWire = nextWire + 1;
 	gates.push({
-		gateId: `or_xor_${nextWire}`,
+		gateId: `greater_xor_${nextWire}`,
 		op: "XOR",
 		inputs: [a, b],
 		output: xorWire,
 	});
 	const outWire = nextWire + 2;
 	gates.push({
-		gateId: `or_out_${nextWire}`,
+		gateId: `greater_output_${nextWire}`,
 		op: "XOR",
 		inputs: [xorWire, andWire],
 		output: outWire,
@@ -610,7 +592,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const notYi = nextWire;
 		gates.push({
-			gateId: `cmp_noty_${index}`,
+			gateId: `compare_not_y_${index}`,
 			op: "NOT",
 			inputs: [yi],
 			output: notYi,
@@ -619,7 +601,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const xAndNotY = nextWire;
 		gates.push({
-			gateId: `cmp_xnoty_${index}`,
+			gateId: `compare_x_and_not_y_${index}`,
 			op: "AND",
 			inputs: [xi, notYi],
 			output: xAndNotY,
@@ -628,7 +610,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const xorXY = nextWire;
 		gates.push({
-			gateId: `cmp_xor_${index}`,
+			gateId: `compare_x_xor_y_${index}`,
 			op: "XOR",
 			inputs: [xi, yi],
 			output: xorXY,
@@ -637,7 +619,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const notXor = nextWire;
 		gates.push({
-			gateId: `cmp_nx_${index}`,
+			gateId: `compare_not_xor_${index}`,
 			op: "NOT",
 			inputs: [xorXY],
 			output: notXor,
@@ -646,7 +628,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const gtTerm = nextWire;
 		gates.push({
-			gateId: `cmp_gtterm_${index}`,
+			gateId: `compare_greater_term_${index}`,
 			op: "AND",
 			inputs: [equal, xAndNotY],
 			output: gtTerm,
@@ -659,7 +641,7 @@ function buildMillionaireCircuit(bits: number): Circuit {
 
 		const eqOut = nextWire;
 		gates.push({
-			gateId: `cmp_eq_${index}`,
+			gateId: `compare_equal_${index}`,
 			op: "AND",
 			inputs: [equal, notXor],
 			output: eqOut,
@@ -674,117 +656,12 @@ function buildMillionaireCircuit(bits: number): Circuit {
 	]);
 }
 
-function buildEqualityCircuit(bits: number): Circuit {
-	const gates: GateSpec[] = [];
-	const one = 2 * bits;
-	let nextWire = 2 * bits + 1;
-	let equal = one;
-
-	for (let index = 0; index < bits; index += 1) {
-		const xi = index;
-		const yi = bits + index;
-		const xorXY = nextWire;
-		gates.push({
-			gateId: `eq_xor_${index}`,
-			op: "XOR",
-			inputs: [xi, yi],
-			output: xorXY,
-		});
-		nextWire += 1;
-
-		const notXor = nextWire;
-		gates.push({
-			gateId: `eq_not_${index}`,
-			op: "NOT",
-			inputs: [xorXY],
-			output: notXor,
-		});
-		nextWire += 1;
-
-		const eqOut = nextWire;
-		gates.push({
-			gateId: `eq_and_${index}`,
-			op: "AND",
-			inputs: [equal, notXor],
-			output: eqOut,
-		});
-		nextWire += 1;
-		equal = eqOut;
-	}
-
-	return new Circuit("equality", bits, bits, [1], gates, [equal]);
-}
-
-function buildAdditionCircuit(bits: number): Circuit {
-	const gates: GateSpec[] = [];
-	const zero = 2 * bits;
-	let nextWire = 2 * bits + 1;
-	let carry = zero;
-	const outputs: number[] = [];
-
-	for (let index = bits - 1; index >= 0; index -= 1) {
-		const xi = index;
-		const yi = bits + index;
-
-		const xorXY = nextWire;
-		gates.push({
-			gateId: `add_xor_${index}`,
-			op: "XOR",
-			inputs: [xi, yi],
-			output: xorXY,
-		});
-		nextWire += 1;
-
-		const sumBit = nextWire;
-		gates.push({
-			gateId: `add_sum_${index}`,
-			op: "XOR",
-			inputs: [xorXY, carry],
-			output: sumBit,
-		});
-		nextWire += 1;
-		outputs.push(sumBit);
-
-		const andXY = nextWire;
-		gates.push({
-			gateId: `add_andxy_${index}`,
-			op: "AND",
-			inputs: [xi, yi],
-			output: andXY,
-		});
-		nextWire += 1;
-
-		const andCarry = nextWire;
-		gates.push({
-			gateId: `add_andc_${index}`,
-			op: "AND",
-			inputs: [carry, xorXY],
-			output: andCarry,
-		});
-		nextWire += 1;
-
-		const carryOut = orGate(andXY, andCarry, nextWire, gates);
-		nextWire += 3;
-		carry = carryOut;
-	}
-
-	return new Circuit("addition", bits, bits, [0], gates, outputs.reverse());
-}
-
 function intToBits(value: number, width: number): Bit[] {
 	const bits: Bit[] = [];
 	for (let index = width - 1; index >= 0; index -= 1) {
 		bits.push(((value >> index) & 1) as Bit);
 	}
 	return bits;
-}
-
-function bitsToInt(bits: Bit[]): number {
-	let value = 0;
-	for (const bit of bits) {
-		value = (value << 1) | bit;
-	}
-	return value;
 }
 
 function fromHexInput(value: string, fallback: number): number {
@@ -800,7 +677,7 @@ function ElGamalCard() {
 		createElGamalRound(37),
 	);
 	const [successCount, setSuccessCount] = useState(0);
-	const [attemptCount, setAttemptCount] = useState(0);
+	const [cycleReady, setCycleReady] = useState(false);
 	const [challenge, setChallenge] = useState<CcaRound>(() =>
 		createCcaRound(37),
 	);
@@ -809,16 +686,13 @@ function ElGamalCard() {
 		const { pk, sk } = keygen(ELGAMAL_PARAMS);
 		const ciphertext = elgamalEncrypt(pk, messageValue);
 		const tamperedCiphertext = multiplyCiphertextByTwo(pk, ciphertext);
-		const decrypted = elgamalDecrypt(sk, ciphertext);
-		const tamperedDecrypted = elgamalDecrypt(sk, tamperedCiphertext);
 		return {
 			pk,
 			sk,
 			message: messageValue,
 			ciphertext,
 			tamperedCiphertext,
-			decrypted,
-			tamperedDecrypted,
+			tamperedDecrypted: null,
 		};
 	}
 
@@ -855,16 +729,16 @@ function ElGamalCard() {
 		};
 	}
 
-	const runMalleabilityTrials = () => {
-		const { pk, sk } = keygen(ELGAMAL_PARAMS);
-		let successes = 0;
-		for (let index = 0; index < 100; index += 1) {
-			const m = randInt(2, Math.min(ELGAMAL_PARAMS.p - 2, 2000));
-			const ciphertext = elgamalEncrypt(pk, m);
-			const tampered = multiplyCiphertextByTwo(pk, ciphertext);
-			if (elgamalDecrypt(sk, tampered) === (2 * m) % pk.p) successes += 1;
+	const decryptTamperedCiphertext = () => {
+		if (!cycleReady) {
+			return;
 		}
-		setSuccessCount(successes);
+		setRound((current) => ({
+			...current,
+			tamperedDecrypted: elgamalDecrypt(current.sk, current.tamperedCiphertext),
+		}));
+		setSuccessCount((count) => count + 1);
+		setCycleReady(false);
 	};
 
 	const runChallenge = () => {
@@ -881,14 +755,8 @@ function ElGamalCard() {
 				),
 				signature: current.envelope.signature,
 			},
-				tamperedOracleResponse: "Rejected by signature check",
-			tamperedDecrypted: verifyThenDecrypt(current.pkSig, current.skEnc, {
-				ciphertext: multiplyCiphertextByTwo(
-					current.pkEnc,
-					current.envelope.ciphertext,
-				),
-				signature: current.envelope.signature,
-			}),
+			tamperedOracleResponse: hex(current.plainDecrypted),
+			tamperedDecrypted: current.plainDecrypted,
 			plainTampered: multiplyCiphertextByTwo(
 				current.pkEnc,
 				current.plainChallenge,
@@ -898,11 +766,6 @@ function ElGamalCard() {
 				multiplyCiphertextByTwo(current.pkEnc, current.plainChallenge),
 			),
 		}));
-		setAttemptCount((count) => count + 1);
-	};
-
-	const reroll = () => {
-		setRound(createElGamalRound(message));
 	};
 
 	return (
@@ -925,12 +788,15 @@ function ElGamalCard() {
 				<div className="segment-row" style={{ marginBottom: "0.65rem" }}>
 					<button
 						type="button"
-						onClick={() => setRound(createElGamalRound(message))}
+						onClick={() => {
+							setRound(createElGamalRound(message));
+							setCycleReady(true);
+						}}
 					>
 						Encrypt
 					</button>
-					<button type="button" onClick={reroll}>
-						New Keys
+					<button type="button" onClick={decryptTamperedCiphertext}>
+						Decrypt c'
 					</button>
 				</div>
 				<p className="kv">
@@ -945,27 +811,26 @@ function ElGamalCard() {
 					Tampered ciphertext c' = ({hex(round.tamperedCiphertext.c1)},{" "}
 					{hex(round.tamperedCiphertext.c2)})
 				</p>
-				<p className="kv">Dec(c) = {hex(round.decrypted)}</p>
 				<p className="kv">
-					Dec(c') = {hex(round.tamperedDecrypted)} = 2 · m mod p
+					c' keeps c1 the same and doubles c2 modulo p, so the decrypted value becomes 2 · m mod p.
 				</p>
-				<p className="kv">Tamper attempts = {attemptCount}</p>
+				<p className="kv">
+					Dec(c') = {round.tamperedDecrypted === null ? "?" : hex(round.tamperedDecrypted)} = 2 · m mod p
+				</p>
+				<p className="kv">Success counter = {successCount}</p>
 				<div className="warn">
 					Dec(c1, 2c2) = 2 · Dec(c1, c2) for every message in this toy field.
 				</div>
 			</article>
 
 			<article className="control-card">
-				<h2>CPA / CCA game</h2>
+				<h2>CPA game</h2>
 				<div className="segment-row" style={{ marginBottom: "0.65rem" }}>
 					<button type="button" onClick={runChallenge}>
 						Encrypt challenge
 					</button>
 					<button type="button" onClick={tamperChallenge}>
 						Submit modified ciphertext
-					</button>
-					<button type="button" onClick={runMalleabilityTrials}>
-						Run 100 trials
 					</button>
 				</div>
 				<p className="kv">Challenge message m = {hex(challenge.message)}</p>
@@ -974,16 +839,17 @@ function ElGamalCard() {
 					{hex(challenge.envelope.ciphertext.c2)})
 				</p>
 				<p className="kv">
-					Tampered oracle response = {" "}
-					{challenge.tamperedOracleResponse ?? "?"}
+					Modified ciphertext CE' = ({hex(challenge.plainTampered.c1)},{" "}
+					{hex(challenge.plainTampered.c2)})
 				</p>
 				<p className="kv">
-					Plain ElGamal response = {hex(challenge.plainDecrypted)}
+					Decryption oracle response = {challenge.tamperedOracleResponse ?? "?"}
 				</p>
-				<p className="kv">Success counter = {successCount}/100</p>
+				<p className="kv">
+					Expected 2m mod p = {hex((2 * challenge.message) % challenge.pkEnc.p)}
+				</p>
 				<div className="warn">
-					The signature gate blocks the modified ciphertext, while plain ElGamal
-					returns 2m.
+					Submitting CE' to the decryption oracle returns 2m, so plain ElGamal fails CCA.
 				</div>
 			</article>
 		</div>
@@ -993,7 +859,6 @@ function ElGamalCard() {
 function Pa17Card() {
 	const [message, setMessage] = useState(37);
 	const [round, setRound] = useState<CcaRound>(() => createCcaRound(37));
-	const [tamperCount, setTamperCount] = useState(0);
 
 	function createCcaRound(messageValue: number): CcaRound {
 		const { pk: pkEnc, sk: skEnc } = keygen(ELGAMAL_PARAMS);
@@ -1056,7 +921,6 @@ function Pa17Card() {
 				),
 			};
 		});
-		setTamperCount((count) => count + 1);
 	};
 
 	return (
@@ -1097,10 +961,10 @@ function Pa17Card() {
 				<p className="kv">σ = {hex(round.envelope.signature)}</p>
 				<p className="kv">
 					Verify-then-Decrypt(CE,σ) ={" "}
-					{round.decrypted === null ? "?" : hex(round.decrypted)}
+					{round.tamperedOracleResponse ?? (round.decrypted === null ? "?" : hex(round.decrypted))}
 				</p>
 				<p className="kv">
-					Tampered CE &gt; {round.tamperedOracleResponse ?? "?"}
+					The tampered ciphertext keeps the signature but changes c2, so signature verification rejects it before decryption.
 				</p>
 				<div className="warn">
 					Signature verification runs first; tampered ciphertext is rejected by signature check.
@@ -1121,7 +985,9 @@ function Pa17Card() {
 				<p className="kv">
 					Expected 2m mod p = {hex((2 * round.message) % round.pkEnc.p)}
 				</p>
-				<p className="kv">Tamper clicks = {tamperCount}</p>
+				<p className="kv">
+					Without the signature layer, the same tampering still decrypts to 2m mod p.
+				</p>
 				<div className="warn">
 					Plain ElGamal is malleable; the same attack fails on the signed
 					variant.
@@ -1132,11 +998,10 @@ function Pa17Card() {
 }
 
 function Pa18Card() {
-	const [choice, setChoice] = useState<Bit>(0);
+	const [choice, setChoice] = useState<Bit | null>(null);
 	const [m0, setM0] = useState(11);
 	const [m1, setM1] = useState(42);
-	const [round, setRound] = useState<Pa18Round>(() => runOtRound(0, 11, 42));
-	const [correctCount, setCorrectCount] = useState(0);
+	const [round, setRound] = useState<Pa18Round | null>(null);
 
 	function runOtRound(choiceBit: Bit, left: number, right: number): Pa18Round {
 		const state = otReceiverStep1(choiceBit);
@@ -1155,95 +1020,115 @@ function Pa18Card() {
 			state,
 			ciphertexts,
 			selected,
-			cheated,
 			log: [
-				`receiver step1: choice=${choiceBit}, pk0=${hex(state.publicKeys[0].h)}, pk1=${hex(state.publicKeys[1].h)}`,
-				`sender step: C0=(${hex(ciphertexts[0].c1)}, ${hex(ciphertexts[0].c2)})`,
-				`sender step: C1=(${hex(ciphertexts[1].c1)}, ${hex(ciphertexts[1].c2)})`,
-				`receiver step2: mb=${hex(selected)}`,
+				{
+					title: "Key pairs generated",
+					detail: `Bob generates one honest keypair and one random public key. choice bit b = ${choiceBit}.`,
+				},
+				{
+					title: "(pk0; pk1) sent to Alice",
+					detail: `Alice receives pk0 = ${hex(state.publicKeys[0].h)} and pk1 = ${hex(state.publicKeys[1].h)}.`,
+				},
+				{
+					title: "C0 and C1 received",
+					detail: `Alice encrypts m0 and m1, sending C0 = (${hex(ciphertexts[0].c1)}, ${hex(ciphertexts[0].c2)}) and C1 = (${hex(ciphertexts[1].c1)}, ${hex(ciphertexts[1].c2)}).`,
+				},
+				{
+					title: "Cb decrypted",
+					detail: `Bob decrypts C${choiceBit} and recovers m${choiceBit} = ${hex(selected)}.`,
+				},
 			],
 		};
 	}
 
-	const runOt = () => setRound(runOtRound(choice, m0, m1));
-
-	const runTrials = () => {
-		setCorrectCount(otCorrectnessTrials(100));
+	const runOt = (choiceBit: Bit) => {
+		setChoice(choiceBit);
+		setRound(runOtRound(choiceBit, m0, m1));
 	};
 
 	return (
-		<div className="control-grid">
-			<article className="control-card">
+		<div className="pa18-layout">
+			<article className="control-card pa18-alice-panel">
+				<h2>Alice’s sender panel</h2>
+				<p className="kv pa18-panel-note">
+					Greyed out on purpose: Alice holds two hidden messages, m0 and m1.
+					Bob never sees them directly.
+				</p>
+				<div className="pa18-hidden-grid">
+					<div className="pa18-hidden-card">
+						<span className="pa18-hidden-label">m0</span>
+						<span className="pa18-hidden-value">hidden</span>
+					</div>
+					<div className="pa18-hidden-card">
+						<span className="pa18-hidden-label">m1</span>
+						<span className="pa18-hidden-value">hidden</span>
+					</div>
+				</div>
+				<div className="warn pa18-hidden-note">
+					Alice keeps both messages private while the OT protocol carries only the
+					necessary ciphertexts to Bob.
+				</div>
+			</article>
+
+			<article className="control-card pa18-bob-panel">
 				<h2>Bob’s receiver panel</h2>
-				<div className="segment-row" style={{ marginBottom: "0.65rem" }}>
+				<p className="kv pa18-panel-note">
+					Bob chooses exactly one branch. Click <strong>Choose 0</strong> or
+					<strong>Choose 1</strong> to run the OT demo step-by-step.
+				</p>
+				<div className="segment-row pa18-choice-row">
 					<button
 						type="button"
 						className={choice === 0 ? "active" : ""}
-						onClick={() => setChoice(0)}
+						onClick={() => runOt(0)}
 					>
 						Choose 0
 					</button>
 					<button
 						type="button"
 						className={choice === 1 ? "active" : ""}
-						onClick={() => setChoice(1)}
+						onClick={() => runOt(1)}
 					>
 						Choose 1
 					</button>
-					<button type="button" onClick={runOt}>
-						Run OT
-					</button>
 				</div>
-				<div className="control-field">
-					<label htmlFor="pa18-m0">m0</label>
-					<input
-						id="pa18-m0"
-						type="number"
-						value={m0}
-						onChange={(event) => setM0(fromHexInput(event.target.value, 11))}
-					/>
+				<div className="pa18-result-card">
+					<div className="pa18-result-kicker">Result</div>
+					{round === null ? (
+						<div className="pa18-result-note">Choose 0 or Choose 1 to reveal m<sub>b</sub>.</div>
+					) : (
+						<>
+							<div className="pa18-result-value">m<sub>b</sub> = m{round.choice} = {hex(round.selected)}</div>
+							<div className="pa18-result-note">Bob learns only the selected message.</div>
+						</>
+					)}
 				</div>
-				<div className="control-field">
-					<label htmlFor="pa18-m1">m1</label>
-					<input
-						id="pa18-m1"
-						type="number"
-						value={m1}
-						onChange={(event) => setM1(fromHexInput(event.target.value, 42))}
-					/>
-				</div>
-				<div className="segment-row" style={{ marginBottom: "0.5rem" }}>
-					<button type="button" onClick={runTrials}>
-						Run 100 trials
-					</button>
-				</div>
-				<p className="kv">Selected message = {hex(round.selected)}</p>
-				<p className="kv">Hidden other message = ??</p>
-				<p className="kv">
-					Cheat attempt ={" "}
-					{round.cheated === null ? "failed" : hex(round.cheated)}
-				</p>
-				<p className="kv">Correctness = {correctCount}/100</p>
-			</article>
-
-			<article className="control-card">
-				<h2>Message log</h2>
-				<div className="step-list">
-					{round.log.map((entry, index) => (
-						<div key={entry} className="step-card">
+				<div className="step-list pa18-log-list">
+					{round === null ? (
+						<div className="step-card pending">
 							<div className="step-head">
-								<strong>
-									{index + 1}. {entry.split(":")[0]}
-								</strong>
-								<span className="status-pill ready">step</span>
+								<strong>Waiting for Bob’s choice</strong>
+								<span className="status-pill">idle</span>
 							</div>
-							<p className="kv">{entry}</p>
+							<p className="kv">Click Choose 0 or Choose 1 to generate the OT transcript.</p>
 						</div>
-					))}
+					) : (
+						round.log.map((entry, index) => (
+							<div key={entry.title} className="step-card">
+								<div className="step-head">
+									<strong>
+										{index + 1}. {entry.title}
+									</strong>
+									<span className="status-pill ready">step</span>
+								</div>
+								<p className="kv">{entry.detail}</p>
+							</div>
+						))
+					)}
 				</div>
-				<div className="warn">
-					Receiver learns only m_b. Sender sees two public keys but not Bob’s
-					choice bit.
+				<div className="warn pa18-conclusion">
+					The sender keeps both branches available, but Bob decrypts only Cb and
+					reveals mb.
 				</div>
 			</article>
 		</div>
@@ -1253,19 +1138,20 @@ function Pa18Card() {
 function Pa19Card() {
 	const [a, setA] = useState<Bit>(1);
 	const [b, setB] = useState<Bit>(0);
-	const [truthRows, setTruthRows] = useState<Pa19TruthTableRow[]>(() =>
-		verifyTruthTable(50),
-	);
-	const andTranscript = secureAndWithTranscript(a, b);
-	const xorTranscript = secureXorWithTranscript(a, b);
-	const andResult = secureAnd(a, b);
-	const xorResult = secureXor(a, b);
-	const notResult = secureNot(a);
+	const [currentRun, setCurrentRun] = useState<SecureAndTranscript | null>(null);
+	const [truthRows, setTruthRows] = useState<Pa19TruthTableRow[] | null>(null);
+
+	const runAnd = () => {
+		setCurrentRun(secureAndWithTranscript(a, b));
+	};
 
 	return (
 		<div className="control-grid">
 			<article className="control-card">
 				<h2>Alice / Bob bits</h2>
+				<p className="kv">
+					Alice enters bit a in 0 or 1 and Bob enters bit b in 0 or 1.
+				</p>
 				<div className="segment-row" style={{ marginBottom: "0.65rem" }}>
 					<button
 						type="button"
@@ -1297,61 +1183,115 @@ function Pa19Card() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setTruthRows(verifyTruthTable(50))}
+						onClick={runAnd}
 					>
-						Run all
+						Compute AND
 					</button>
 				</div>
-				<p className="kv">Secure AND(a,b) = {andResult}</p>
-				<p className="kv">Secure XOR(a,b) = {xorResult}</p>
-				<p className="kv">Secure NOT(a) = {notResult}</p>
+				<p className="kv">
+					Secure AND(a,b) = {currentRun === null ? "?" : currentRun.outputBit}
+				</p>
+				<p className="kv">
+					The protocol uses OT messages (0, a) so Bob learns only a AND b.
+				</p>
 				<div className="warn">
-					Bob learns only a ∧ b via OT; Alice learns nothing about b beyond the
-					protocol transcript.
+					What does Alice learn? Only that the OT protocol ran. What does Bob
+					learn? Only a AND b.
 				</div>
 			</article>
 
 			<article className="control-card">
 				<h2>Protocol transcript</h2>
-				<p className="kv">
-					OT messages = ({andTranscript.messages[0]},{" "}
-					{andTranscript.messages[1]})
-				</p>
-				<p className="kv">Received mb = {andTranscript.receivedMessage}</p>
-				<p className="kv">
-					XOR shares = ({xorTranscript.aliceShare}, {xorTranscript.bobShare})
-				</p>
-				<div className="step-list">
-					{andTranscript.transcript.map((entry) => (
-						<div key={entry} className="step-card">
-							<p className="kv">{entry}</p>
+				{currentRun === null ? (
+					<div className="step-card pending">
+						<div className="step-head">
+							<strong>Waiting for Compute AND</strong>
+							<span className="status-pill">idle</span>
 						</div>
-					))}
-				</div>
+						<p className="kv">
+							Click Compute AND to generate the OT transcript for the selected
+							bits.
+						</p>
+					</div>
+				) : (
+					<div className="step-list">
+						{currentRun.transcript.map((entry, index) => (
+							<div key={entry} className="step-card">
+								<div className="step-head">
+									<strong>
+										{index + 1}. {index === 0 ? "Alice sets up OT messages" : index === 1 ? "Bob runs OT receiver" : "Bob receives m_b"}
+									</strong>
+									<span className="status-pill ready">step</span>
+								</div>
+								<p className="kv">{entry}</p>
+							</div>
+						))}
+						<div className="step-card">
+							<div className="step-head">
+								<strong>What does Alice learn?</strong>
+								<span className="status-pill ready">summary</span>
+							</div>
+							<p className="kv">
+								Alice learns only that Bob ran the OT protocol; she does not
+								learn b.
+							</p>
+						</div>
+						<div className="step-card">
+							<div className="step-head">
+								<strong>What does Bob learn?</strong>
+								<span className="status-pill ready">summary</span>
+							</div>
+							<p className="kv">
+								Bob learns only m_b = a AND b and nothing about Alice’s hidden
+								input beyond the transcript.
+							</p>
+						</div>
+					</div>
+				)}
 			</article>
 
 			<article className="control-card">
-				<h2>Truth table check</h2>
-				<div className="step-list">
-					{truthRows.map((row) => (
-						<div key={`${row.a}${row.b}`} className="step-card">
-							<div className="step-head">
-								<strong>
-									a={row.a}, b={row.b}
-								</strong>
-								<span
-									className={`status-pill${row.andOk && row.xorOk ? " ready" : ""}`}
-								>
-									{row.andOk && row.xorOk ? "passed" : "failed"}
-								</span>
-							</div>
-							<p className="kv">
-								AND ok = {String(row.andOk)} · XOR ok = {String(row.xorOk)}
-							</p>
-							<p className="kv">Transcript: {row.transcript}</p>
-						</div>
-					))}
+				<h2>Run all 4 combinations</h2>
+				<div className="segment-row" style={{ marginBottom: "0.6rem" }}>
+					<button type="button" onClick={() => setTruthRows(verifyTruthTable())}>
+						Run all
+					</button>
 				</div>
+				<p className="kv">
+					Checks every input pair against the AND truth table and records the OT
+					transcript for each case.
+				</p>
+				{truthRows === null ? (
+					<div className="step-card pending">
+						<div className="step-head">
+							<strong>Waiting for Run all</strong>
+							<span className="status-pill">idle</span>
+						</div>
+						<p className="kv">
+							Click Run all to verify the AND truth table for all four input
+							combinations.
+						</p>
+					</div>
+				) : (
+					<div className="step-list">
+						{truthRows.map((row) => (
+							<div key={`${row.a}${row.b}`} className="step-card">
+								<div className="step-head">
+									<strong>
+										a={row.a}, b={row.b}
+									</strong>
+									<span className={`status-pill${row.passed ? " ready" : ""}`}>
+										{row.passed ? "passed" : "failed"}
+									</span>
+								</div>
+								<p className="kv">
+									AND output = {row.outputBit} · expected = {row.expectedBit}
+								</p>
+								<p className="kv">Transcript: {row.transcript}</p>
+							</div>
+						))}
+					</div>
+				)}
 			</article>
 		</div>
 	);
@@ -1359,190 +1299,202 @@ function Pa19Card() {
 
 function CircuitTraceView({ result }: { result: SecureEvalResult }) {
 	return (
-		<div className="control-card" style={{ marginTop: "0.75rem" }}>
-			<h2>Gate trace</h2>
-			<div className="warn" style={{ marginBottom: "0.65rem" }}>
-				OT calls used: {result.otCalls}
-			</div>
-			<div
-				className="hex"
-				style={{
-					marginBottom: "0.65rem",
-					background:
-						"linear-gradient(90deg, rgba(15, 138, 127, 0.18), rgba(215, 108, 47, 0.12))",
-				}}
-			>
-				Gates completed: {result.gateLog.length}
-			</div>
-			<div className="step-list">
+		<details className="pa20-trace-details" open>
+			<summary className="pa20-trace-summary">Circuit trace</summary>
+			<div className="step-list" style={{ marginTop: "0.75rem" }}>
 				{result.gateLog.map((step, index) => (
 					<div key={`${step.gateId}-${index}`} className="step-card">
 						<div className="step-head">
 							<strong>
 								{index + 1}. {step.gateId}
 							</strong>
-							<span
-								className={`status-pill${step.op === "AND" ? " ready" : ""}`}
-							>
+							<span className={`status-pill${step.op === "AND" ? " ready" : ""}`}>
 								{step.op}
 							</span>
 						</div>
-						<p className="kv">Inputs: {step.inputs.join(", ")}</p>
-						<p className="kv">
-							Output wire: {step.outputWire} = {step.outputBit}
-						</p>
+						<p className="kv">Output wire: {step.outputWire} = {step.outputBit}</p>
 						<p className="kv">{step.note}</p>
 					</div>
 				))}
 			</div>
-		</div>
+		</details>
 	);
 }
 
-function Pa20Card() {
-	const millionaireCircuit = useMemo(() => buildMillionaireCircuit(4), []);
-	const equalityCircuit = useMemo(() => buildEqualityCircuit(4), []);
-	const additionCircuit = useMemo(() => buildAdditionCircuit(4), []);
+type MillionaireResult = "Alice is richer" | "Bob is richer" | "Equal";
 
+interface MillionaireRun {
+	trace: SecureEvalResult;
+	result: MillionaireResult;
+	visibleGateCount: number;
+}
+
+function Pa20Card() {
+	const millionaireBits = 7;
+	const millionaireCircuit = useMemo(
+		() => buildMillionaireCircuit(millionaireBits),
+		[],
+	);
 	const [xMillionaire, setXM] = useState(7);
 	const [yMillionaire, setYM] = useState(12);
-	const [xEquality, setXE] = useState(9);
-	const [yEquality, setYE] = useState(9);
-	const [xAddition, setXA] = useState(7);
-	const [yAddition, setYA] = useState(12);
+	const [run, setRun] = useState<MillionaireRun | null>(null);
 
-	const millionaireDemo = useMemo(() => {
+	function resolveResult(trace: SecureEvalResult): MillionaireResult {
+		return trace.outputBits[0] === 1
+			? "Alice is richer"
+			: trace.outputBits[1] === 1
+				? "Equal"
+				: "Bob is richer";
+	}
+
+	function startComparison(): void {
 		const trace = millionaireCircuit.secureEvaluate(
-			intToBits(xMillionaire, 4),
-			intToBits(yMillionaire, 4),
+			intToBits(xMillionaire, millionaireBits),
+			intToBits(yMillionaire, millionaireBits),
 		);
-		const output =
-			trace.outputBits[0] === 1
-				? "Alice is richer"
-				: trace.outputBits[1] === 1
-					? "Equal"
-					: "Bob is richer";
-		return { trace, output };
-	}, [millionaireCircuit, xMillionaire, yMillionaire]);
+		setRun({ trace, result: resolveResult(trace), visibleGateCount: 0 });
+	}
 
-	const equalityDemo = useMemo(() => {
-		const trace = equalityCircuit.secureEvaluate(
-			intToBits(xEquality, 4),
-			intToBits(yEquality, 4),
-		);
-		return { trace, output: trace.outputBits[0] };
-	}, [equalityCircuit, xEquality, yEquality]);
-
-	const additionDemo = useMemo(() => {
-		const trace = additionCircuit.secureEvaluate(
-			intToBits(xAddition, 4),
-			intToBits(yAddition, 4),
-		);
-		return { trace, output: bitsToInt(trace.outputBits) };
-	}, [additionCircuit, xAddition, yAddition]);
+	useEffect(() => {
+		if (run === null) return;
+		if (run.visibleGateCount >= run.trace.gateLog.length) return;
+		const timer = window.setTimeout(() => {
+			setRun((current) =>
+				current === null
+					? current
+					: {
+						...current,
+						visibleGateCount: current.visibleGateCount + 1,
+					},
+			);
+		}, 160);
+		return () => window.clearTimeout(timer);
+	}, [run]);
 
 	return (
-		<div className="control-grid">
-			<article className="control-card">
-				<h2>Millionaire’s problem</h2>
+		<div className="pa20-live-grid">
+			<article className="control-card pa20-side-card pa20-alice-card">
+				<h2>Alice panel</h2>
+				<p className="kv pa20-side-note">
+					Alice controls her wealth x. Bob’s panel does not show it.
+				</p>
 				<div className="control-field">
-					<label htmlFor="pa20-xm">Alice x</label>
+					<label htmlFor="pa20-xm">Wealth x</label>
 					<input
 						id="pa20-xm"
-						type="number"
+						type="range"
 						min={0}
-						max={15}
+						max={100}
 						value={xMillionaire}
-						onChange={(event) =>
-							setXM(fromHexInput(event.target.value, 7) % 16)
-						}
+						onChange={(event) => {
+							setXM(fromHexInput(event.target.value, 7));
+							setRun(null);
+						}}
+						className="pa01-slider"
 					/>
+					<div className="pa01-slider-readout">x = {xMillionaire}</div>
+					<div className="pa01-slider-ticks">
+						<span>0</span>
+						<span>100</span>
+					</div>
 				</div>
+			</article>
+
+			<article className="control-card pa20-side-card pa20-bob-card">
+				<h2>Bob panel</h2>
+				<p className="kv pa20-side-note">
+					Bob controls his wealth y. Alice’s panel does not show it.
+				</p>
 				<div className="control-field">
-					<label htmlFor="pa20-ym">Bob y</label>
+					<label htmlFor="pa20-ym">Wealth y</label>
 					<input
 						id="pa20-ym"
-						type="number"
+						type="range"
 						min={0}
-						max={15}
+						max={100}
 						value={yMillionaire}
-						onChange={(event) =>
-							setYM(fromHexInput(event.target.value, 12) % 16)
-						}
+						onChange={(event) => {
+							setYM(fromHexInput(event.target.value, 12));
+							setRun(null);
+						}}
+						className="pa01-slider"
 					/>
+					<div className="pa01-slider-readout">y = {yMillionaire}</div>
+					<div className="pa01-slider-ticks">
+						<span>0</span>
+						<span>100</span>
+					</div>
 				</div>
-				<p className="kv">Result: {millionaireDemo.output}</p>
-				<p className="kv">OT calls: {millionaireDemo.trace.otCalls}</p>
+			</article>
+
+			<article className="control-card pa20-summary-card">
+				<h2>Who is richer?</h2>
+				<div className="segment-row" style={{ marginBottom: "0.7rem" }}>
+					<button type="button" onClick={startComparison}>
+						Who is richer?
+					</button>
+				</div>
 				<p className="kv">
-					Circuit trace shows AND/XOR/NOT gates in topological order.
+					Toy parameters: 7-bit comparison, enough to cover values from 0 to
+					100, fast enough to animate gate by gate.
 				</p>
-				<CircuitTraceView result={millionaireDemo.trace} />
+				<div className="pa20-result-banner">
+					<div className="pa20-result-label">Result shown to both</div>
+					<div className="pa20-result-value">
+						{run === null
+							? "Click Who is richer?"
+							: run.visibleGateCount >= run.trace.gateLog.length
+								? run.result
+								: "Evaluating gate by gate..."}
+					</div>
+				</div>
+				<div className="pa20-progress-shell">
+					<div className="pa20-progress-head">
+						<span>Gates completed</span>
+						<span>
+							{run === null ? 0 : Math.min(run.visibleGateCount, run.trace.gateLog.length)}
+							 / {run === null ? millionaireCircuit.gates.length : run.trace.gateLog.length}
+						</span>
+					</div>
+					<div className="pa20-progress-track" aria-hidden="true">
+						<div
+							className="pa20-progress-fill"
+							style={{
+								width:
+									run === null
+										? "0%"
+										: `${Math.min(
+											100,
+											(run.visibleGateCount / run.trace.gateLog.length) * 100,
+										)}%`,
+							}}
+						/>
+					</div>
+				</div>
 			</article>
 
-			<article className="control-card">
-				<h2>Secure equality</h2>
-				<div className="control-field">
-					<label htmlFor="pa20-xe">Alice x</label>
-					<input
-						id="pa20-xe"
-						type="number"
-						min={0}
-						max={15}
-						value={xEquality}
-						onChange={(event) =>
-							setXE(fromHexInput(event.target.value, 9) % 16)
-						}
-					/>
-				</div>
-				<div className="control-field">
-					<label htmlFor="pa20-ye">Bob y</label>
-					<input
-						id="pa20-ye"
-						type="number"
-						min={0}
-						max={15}
-						value={yEquality}
-						onChange={(event) =>
-							setYE(fromHexInput(event.target.value, 9) % 16)
-						}
-					/>
-				</div>
-				<p className="kv">Equal = {equalityDemo.output}</p>
-				<p className="kv">OT calls: {equalityDemo.trace.otCalls}</p>
-				<CircuitTraceView result={equalityDemo.trace} />
-			</article>
-
-			<article className="control-card">
-				<h2>Secure bit-addition</h2>
-				<div className="control-field">
-					<label htmlFor="pa20-xa">Alice x</label>
-					<input
-						id="pa20-xa"
-						type="number"
-						min={0}
-						max={15}
-						value={xAddition}
-						onChange={(event) =>
-							setXA(fromHexInput(event.target.value, 7) % 16)
-						}
-					/>
-				</div>
-				<div className="control-field">
-					<label htmlFor="pa20-ya">Bob y</label>
-					<input
-						id="pa20-ya"
-						type="number"
-						min={0}
-						max={15}
-						value={yAddition}
-						onChange={(event) =>
-							setYA(fromHexInput(event.target.value, 12) % 16)
-						}
-					/>
-				</div>
-				<p className="kv">Sum mod 2⁴ = {additionDemo.output}</p>
-				<p className="kv">OT calls: {additionDemo.trace.otCalls}</p>
-				<CircuitTraceView result={additionDemo.trace} />
+			<article className="control-card pa20-trace-card">
+				<CircuitTraceView
+					result={
+						run === null
+							? { outputBits: [], gateLog: [], otCalls: 0 }
+							: {
+								...run.trace,
+								gateLog: run.trace.gateLog.slice(0, run.visibleGateCount),
+							}
+					}
+				/>
+				{run === null ? (
+					<div className="step-card pending" style={{ marginTop: "0.75rem" }}>
+						<div className="step-head">
+							<strong>Waiting for Who is richer?</strong>
+							<span className="status-pill">idle</span>
+						</div>
+						<p className="kv">
+							Click the button to reveal the circuit trace and progress bar.
+						</p>
+					</div>
+				) : null}
 			</article>
 		</div>
 	);
@@ -1555,18 +1507,18 @@ interface Pa16To20PanelProps {
 export default function Pa16To20Panel({ assignment }: Pa16To20PanelProps) {
 	const activeAssignment = assignment ?? "pa16";
 	const titleByAssignment: Record<Pa16Assignment, string> = {
-		pa16: "PA #16",
-		pa17: "PA #17",
-		pa18: "PA #18",
-		pa19: "PA #19",
-		pa20: "PA #20",
+		pa16: "ElGamal Public-Key Cryptosystem",
+		pa17: "CCA-Secure Public-Key Encryption",
+		pa18: "Oblivious Transfer",
+		pa19: "Secure AND Gate",
+		pa20: "All 2-Party Secure Computation",
 	};
 	const noteByAssignment: Record<Pa16Assignment, string> = {
 		pa16: "Shows ElGamal malleability by comparing a normal ciphertext with a doubled ciphertext.",
 		pa17: "Wraps ElGamal with signatures so modified ciphertexts are rejected before decryption.",
 		pa18: "Lets Bob learn exactly one of two messages using oblivious transfer.",
-		pa19: "Builds secure AND, XOR, and NOT from OT and local bit sharing.",
-		pa20: "Evaluates small secure circuits using the PA19 primitives.",
+		pa19: "Builds secure AND from OT so Bob learns only a AND b.",
+		pa20: "Live millionaire comparison with an animated gate-by-gate trace.",
 	};
 
 	const content =
@@ -1584,7 +1536,9 @@ export default function Pa16To20Panel({ assignment }: Pa16To20PanelProps) {
 
 	return (
 		<section className="panel" aria-label="PA16 through PA20 panel">
-			<h3>{titleByAssignment[activeAssignment]}: Public-Key Crypto and MPC</h3>
+			<h3>
+				PA {activeAssignment.slice(2)} — {titleByAssignment[activeAssignment]}
+			</h3>
 			<p className="panel-note">{noteByAssignment[activeAssignment]}</p>
 
 			<div className="pa16-suite-scroll">

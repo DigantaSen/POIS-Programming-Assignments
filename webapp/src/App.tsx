@@ -408,7 +408,7 @@ export default function App() {
 					className={`tab-btn${activeTab === "pa16" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa16")}
 				>
-					PA #16 &mdash; ElGamal
+					PA #16 &mdash; ElGamal Public-Key Cryptosystem
 				</button>
 				<button
 					type="button"
@@ -416,7 +416,7 @@ export default function App() {
 					className={`tab-btn${activeTab === "pa17" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa17")}
 				>
-					PA #17 &mdash; CCA PKC
+					PA #17 &mdash; CCA-Secure Public-Key Encryption
 				</button>
 				<button
 					type="button"
@@ -424,7 +424,7 @@ export default function App() {
 					className={`tab-btn${activeTab === "pa18" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa18")}
 				>
-					PA #18 &mdash; OT
+					PA #18 &mdash; Oblivious Transfer
 				</button>
 				<button
 					type="button"
@@ -432,7 +432,7 @@ export default function App() {
 					className={`tab-btn${activeTab === "pa19" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa19")}
 				>
-					PA #19 &mdash; Secure AND
+					PA #19 &mdash; Secure AND Gate
 				</button>
 				<button
 					type="button"
@@ -440,7 +440,7 @@ export default function App() {
 					className={`tab-btn${activeTab === "pa20" ? " active" : ""}`}
 					onClick={() => setActiveTab("pa20")}
 				>
-					PA #20 &mdash; MPC
+					PA #20 &mdash; All 2-Party Secure Computation
 				</button>
 			</nav>
 			</div>
