@@ -291,7 +291,7 @@ class PA02(AssignmentModule):
 
     def run_demo(self) -> str:
         key = random.getrandbits(GGMPRF.SEED_BITS)
-        depth = 4
+        depth = 16
         query = "".join(random.choice("01") for _ in range(depth))
         result = self.ggm.evaluate(key, query)
         prg_tests = self.prg.statistical_tests(key)

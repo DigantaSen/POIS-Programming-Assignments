@@ -130,6 +130,9 @@ From repository root:
 ```bash
 source .venv/bin/activate
 
+python -c "from pois.assignments.pa01 import PA01; print(PA01().run_demo())"
+python -c "from pois.assignments.pa02 import PA02; print(PA02().run_demo())"
+python -c "from pois.assignments.pa03 import PA03; print(PA03().run_demo())"
 python -c "from pois.assignments.pa04 import PA04; print(PA04().run_demo())"
 python -c "from pois.assignments.pa05 import PA05; print(PA05().run_demo())"
 python -c "from pois.assignments.pa06 import PA06; print(PA06().run_demo())"
