@@ -32,14 +32,14 @@ def fermat_test(n: int, k: int = 40) -> bool:
     return True
 
 
-def miller_rabin(n: int, k: int = 40) -> bool:
+def miller_rabin(n: int, k: int = 40) -> str:
     """Miller-Rabin probabilistic primality test."""
     if n <= 1:
-        return False
+        return "COMPOSITE"
     if n <= 3:
-        return True
+        return "PROBABLY PRIME"
     if n % 2 == 0:
-        return False
+        return "COMPOSITE"
 
     # Extract s and d such that n-1 = 2^s * d
     d = n - 1
@@ -61,9 +61,14 @@ def miller_rabin(n: int, k: int = 40) -> bool:
                 break
         else:
             # If the inner loop didn't break, the number is composite
-            return False
+            return "COMPOSITE"
 
-    return True
+    return "PROBABLY PRIME"
+
+
+def is_prime(n: int) -> bool:
+    """Convenience interface returning boolean."""
+    return miller_rabin(n, 40) == "PROBABLY PRIME"
 
 
 def gen_prime(bits: int) -> int:
@@ -73,8 +78,10 @@ def gen_prime(bits: int) -> int:
         n = random.getrandbits(bits)
         n |= (1 << (bits - 1)) | 1  # Ensure it has exactly `bits` length and is odd
         
-        if miller_rabin(n, 40):
-            return n
+        if miller_rabin(n, 40) == "PROBABLY PRIME":
+            # Sanity check with 100 rounds
+            if miller_rabin(n, 100) == "PROBABLY PRIME":
+                return n
 
 
 class PA13(AssignmentModule):
@@ -94,12 +101,13 @@ class PA13(AssignmentModule):
         ]
         
     def is_prime(self, n: int) -> bool:
-        return miller_rabin(n, 40)
+        return is_prime(n)
         
     def generate_prime(self, bits: int) -> int:
         return gen_prime(bits)
 
     def run_demo(self) -> str:
+        import math
         out = ["PA13 Demo Active", ""]
         
         # Carmichael demo
@@ -111,21 +119,23 @@ class PA13(AssignmentModule):
         
         out.append(f"Carmichael number {carmichael} tested:")
         out.append(f"  Fermat test (base 2) says: {'PRIME' if fermat_result else 'COMPOSITE'} (Fermat is fooled!)")
-        out.append(f"  Miller-Rabin test says: {'PRIME' if mr_result else 'COMPOSITE'} (MR works!)")
+        out.append(f"  Miller-Rabin test says: {mr_result} (MR works!)")
         out.append("")
         
         # Benchmark
         out.append("Benchmarking prime generation...")
-        for bits in [256, 512]:
+        for bits in [512, 1024, 2048]:
             st = time.time()
             candidates = 0
             while True:
                 candidates += 1
                 n = random.getrandbits(bits)
                 n |= (1 << (bits - 1)) | 1
-                if miller_rabin(n, 40):
-                    break
+                if miller_rabin(n, 40) == "PROBABLY PRIME":
+                    if miller_rabin(n, 100) == "PROBABLY PRIME":
+                        break
             elapsed = time.time() - st
-            out.append(f"  Generated {bits}-bit prime in {elapsed:.3f}s. Tested {candidates} candidates.")
+            expected_candidates = int(bits * math.log(2))
+            out.append(f"  Generated {bits}-bit prime in {elapsed:.3f}s. Tested {candidates} candidates (Theoretical avg: O(ln n) ≈ {expected_candidates}).")
             
         return "\n".join(out)
