@@ -78,10 +78,10 @@ function millerRabin(n: bigint, k: number): { prime: boolean, witnesses: string[
 }
 
 function fermatTest(n: bigint): boolean {
-    if (n <= 1n) return false;
-    if (n <= 3n) return true;
-    const a = 2n;
-    return modPow(a, n - 1n, n) === 1n;
+	if (n <= 1n) return false;
+	if (n <= 3n) return true;
+	const a = 2n;
+	return modPow(a, n - 1n, n) === 1n;
 }
 
 // ---- PA12 Math ----
@@ -173,7 +173,7 @@ function Pa12Card() {
 				const psLen = k - msgBytes.length - 3;
 				const ps = randomBytes(psLen);
 				pList.push(Array.from(ps).map(b => b.toString(16).padStart(2, "0")).join(" "));
-				
+
 				let hex = "0x0002";
 				for (const b of ps) hex += b.toString(16).padStart(2, "0");
 				hex += "00";
@@ -190,16 +190,13 @@ function Pa12Card() {
 	const identical = ciphertexts.length === 2 && ciphertexts[0] === ciphertexts[1];
 
 	return (
-		<article className="panel">
-			<h3>PA #12 | Textbook RSA vs PKCS#1 v1.5</h3>
-			<p className="panel-note">Demonstrate the determinism attack on textbook RSA.</p>
-			
+		<>
 			<div className="control-card">
 				<div className="control-field">
 					<label>Message (Vote/Coin flip)</label>
 					<input value={message} onChange={e => setMessage(e.target.value)} maxLength={10} />
 				</div>
-				
+
 				<div className="segment-row" style={{ marginTop: 10, marginBottom: 10 }}>
 					<button className={mode === "textbook" ? "active" : ""} onClick={() => setMode("textbook")}>
 						Textbook Mode
@@ -236,7 +233,7 @@ function Pa12Card() {
 					)}
 				</div>
 			)}
-		</article>
+		</>
 	);
 }
 
@@ -259,10 +256,7 @@ function Pa13Card() {
 	};
 
 	return (
-		<article className="panel">
-			<h3>PA #13 | Miller-Rabin Primality Tester</h3>
-			<p className="panel-note">Test large integers. Try the Carmichael number 561.</p>
-			
+		<>
 			<div className="control-card">
 				<div className="segment-row" style={{ marginBottom: 15 }}>
 					<button onClick={() => { setNumStr("561"); runTest("561"); }}>561 (Carmichael)</button>
@@ -297,7 +291,7 @@ function Pa13Card() {
 					</div>
 				</div>
 			)}
-		</article>
+		</>
 	);
 }
 
@@ -350,10 +344,7 @@ function Pa14Card() {
 	};
 
 	return (
-		<article className="panel">
-			<h3>PA #14 | Håstad's Broadcast Attack</h3>
-			<p className="panel-note">Simulate an e=3 broadcast attack using the Chinese Remainder Theorem.</p>
-
+		<>
 			<div className="control-card">
 				<div className="control-field">
 					<label>Short Message (Integer)</label>
@@ -373,7 +364,7 @@ function Pa14Card() {
 					</div>
 					{attackResult.cTexts.map((c, i) => (
 						<div key={i} style={{ marginBottom: 10 }}>
-							<p className="kv">Recipient {i+1} (Modulus {attackResult.moduli[i].toString()})</p>
+							<p className="kv">Recipient {i + 1} (Modulus {attackResult.moduli[i].toString()})</p>
 							<div className="hex">c = {c.toString()}</div>
 						</div>
 					))}
@@ -392,7 +383,7 @@ function Pa14Card() {
 					)}
 				</div>
 			)}
-		</article>
+		</>
 	);
 }
 
@@ -467,10 +458,7 @@ function Pa15Card() {
 	};
 
 	return (
-		<article className="panel">
-			<h3>PA #15 | Digital Signatures</h3>
-			<p className="panel-note">Compare Hash-then-Sign vs Raw RSA.</p>
-
+		<>
 			<div className="control-card">
 				<h4>1. Standard Signing</h4>
 				<div className="control-field">
@@ -481,7 +469,7 @@ function Pa15Card() {
 					<button onClick={() => handleSign(false)}>Secure Hash-then-Sign</button>
 					<button onClick={() => handleSign(true)}>Raw RSA Sign (Ints Only)</button>
 				</div>
-				
+
 				{sigState && (
 					<div style={{ marginTop: 15 }}>
 						<p className="kv">Signature Generated ({sigState.raw ? "Raw" : "Hashed"}):</p>
@@ -517,23 +505,49 @@ function Pa15Card() {
 					</div>
 				)}
 			</div>
-		</article>
+		</>
 	);
 }
 
 
 export default function Pa12To15Panel({ assignment }: { assignment: Pa12To15Assignment }) {
-	return (
-		<div className="app-shell" style={{ padding: 20 }}>
-			<section className="hero">
-				<h1>PA #12 – PA #15 Interactive Demos</h1>
-				<p>Showcasing Textbook RSA limitations, Primality generation, CRT Broadcast attacks, and Signature forgeries.</p>
-			</section>
+	let title = "";
+	let description = "";
 
-			{assignment === "pa12" && <Pa12Card />}
-			{assignment === "pa13" && <Pa13Card />}
-			{assignment === "pa14" && <Pa14Card />}
-			{assignment === "pa15" && <Pa15Card />}
-		</div>
+	switch (assignment) {
+		case "pa12":
+			title = "Textbook RSA and PKCS#1 v1.5";
+			description = "Interactive demonstration of Textbook RSA determinism vulnerabilities versus PKCS#1 v1.5 randomized padding.";
+			break;
+		case "pa13":
+			title = "Miller-Rabin Primality Testing";
+			description = "Interactive test comparing the Miller-Rabin primality tester against the naive Fermat test, exposing Carmichael numbers.";
+			break;
+		case "pa14":
+			title = "Håstad's Broadcast Attack";
+			description = "Interactive demonstration of the Chinese Remainder Theorem (CRT) used to break unpadded textbook RSA with small public exponent (e=3).";
+			break;
+		case "pa15":
+			title = "Digital Signatures";
+			description = "Interactive demonstration of Secure Hash-then-Sign versus the vulnerabilities of Raw RSA Multiplicative Forgeries.";
+			break;
+	}
+
+	return (
+		<section className="panel" aria-label="PA12 through PA15 panel">
+			<h3>
+				PA {assignment.slice(2)} — {title}
+			</h3>
+			<p className="panel-note">{description}</p>
+
+			<div className="pa16-suite-scroll">
+				<div className="control-grid pa16-suite-grid">
+					{assignment === "pa12" && <Pa12Card />}
+					{assignment === "pa13" && <Pa13Card />}
+					{assignment === "pa14" && <Pa14Card />}
+					{assignment === "pa15" && <Pa15Card />}
+				</div>
+			</div>
+		</section>
 	);
 }

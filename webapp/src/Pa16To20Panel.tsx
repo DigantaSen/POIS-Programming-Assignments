@@ -89,7 +89,7 @@ class Circuit {
 		public readonly constantBits: Bit[],
 		public readonly gates: GateSpec[],
 		public readonly outputs: number[],
-	) {}
+	) { }
 
 	get inputCount(): number {
 		return this.aliceInputs + this.bobInputs + this.constantBits.length;
@@ -905,7 +905,7 @@ function Pa17Card() {
 			return {
 				...current,
 				tamperedEnvelope,
-					tamperedOracleResponse: "Rejected by signature check",
+				tamperedOracleResponse: "Rejected by signature check",
 				tamperedDecrypted: verifyThenDecrypt(
 					current.pkSig,
 					current.skEnc,
@@ -1453,7 +1453,7 @@ function Pa20Card() {
 						<span>Gates completed</span>
 						<span>
 							{run === null ? 0 : Math.min(run.visibleGateCount, run.trace.gateLog.length)}
-							 / {run === null ? millionaireCircuit.gates.length : run.trace.gateLog.length}
+							/ {run === null ? millionaireCircuit.gates.length : run.trace.gateLog.length}
 						</span>
 					</div>
 					<div className="pa20-progress-track" aria-hidden="true">
