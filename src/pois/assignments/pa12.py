@@ -100,6 +100,89 @@ def pkcs15_dec(sk: tuple, c: int) -> bytes:
     return em[zero_idx + 1:]
 
 
+def ceildiv(a: int, b: int) -> int:
+    return -(-a // b)
+
+
+def floordiv(a: int, b: int) -> int:
+    return a // b
+
+
+def bleichenbacher_padding_oracle(sk: tuple, c: int) -> bool:
+    """Returns True if the decrypted ciphertext is PKCS#1 v1.5 compliant."""
+    N = sk[0]
+    k = (N.bit_length() + 7) // 8
+    
+    m_int = rsa_dec(sk, c)
+    em = m_int.to_bytes(k, 'big')
+    
+    return em[0] == 0x00 and em[1] == 0x02
+
+
+def bleichenbacher_attack(pk: tuple[int, int], c: int, oracle, log_fn=print) -> int:
+    """Simplified Bleichenbacher's attack (1998) on PKCS#1 v1.5."""
+    N, e = pk
+    k = (N.bit_length() + 7) // 8
+    
+    B = 2**(8 * (k - 2))
+    
+    # We assume c is already compliant, so s0 = 1
+    M = [(2*B, 3*B - 1)]
+    
+    i = 1
+    s_list = [1]
+    
+    def check_oracle(s_i):
+        c_prime = (c * fast_mod_pow(s_i, e, N)) % N
+        return oracle(c_prime)
+    
+    log_fn("  Starting adaptive search for intervals...")
+    while True:
+        if i == 1:
+            s_i = ceildiv(N, 3*B)
+            while not check_oracle(s_i):
+                s_i += 1
+        elif len(M) > 1:
+            s_i = s_list[-1] + 1
+            while not check_oracle(s_i):
+                s_i += 1
+        else:
+            a, b = M[0]
+            s_i = None
+            r = ceildiv(2 * (b * s_list[-1] - 2 * B), N)
+            found = False
+            while not found:
+                s_min = ceildiv(2 * B + r * N, b)
+                s_max = floordiv(3 * B - 1 + r * N, a)
+                for potential_s in range(s_min, s_max + 1):
+                    if check_oracle(potential_s):
+                        s_i = potential_s
+                        found = True
+                        break
+                if not found:
+                    r += 1
+        
+        s_list.append(s_i)
+        
+        M_new = []
+        for a, b in M:
+            r_min = ceildiv(a * s_i - 3 * B + 1, N)
+            r_max = floordiv(b * s_i - 2 * B, N)
+            for r in range(r_min, r_max + 1):
+                new_a = max(a, ceildiv(2 * B + r * N, s_i))
+                new_b = min(b, floordiv(3 * B - 1 + r * N, s_i))
+                if new_a <= new_b:
+                    M_new.append((new_a, new_b))
+                    
+        M = M_new
+        
+        if len(M) == 1 and M[0][0] == M[0][1]:
+            log_fn(f"  Converged after {i} iterations.")
+            return M[0][0]
+            
+        i += 1
+
+
 class PA12(AssignmentModule):
     def info(self) -> AssignmentInfo:
         return AssignmentInfo(
@@ -114,6 +197,7 @@ class PA12(AssignmentModule):
             "Implement EGCD explicitly",
             "Implement PKCS#1 v1.5 padding scheme",
             "Demonstrate Textbook RSA determinism attack",
+            "Implement Bleichenbacher's Padding Oracle Attack",
         ]
         
     def run_demo(self) -> str:
@@ -145,5 +229,32 @@ class PA12(AssignmentModule):
         
         dec_bytes = pkcs15_dec(sk, cp1)
         out.append(f"  Decrypted bytes: {dec_bytes}")
+        
+        # Bleichenbacher attack demo
+        out.append("")
+        out.append("Bleichenbacher Padding Oracle Attack (CCA2):")
+        
+        # Use a smaller key (256-bit) specifically for Bleichenbacher to keep the demo fast
+        out.append("  Generating 256-bit key for fast oracle demo...")
+        pk_small, sk_small = rsa_keygen(256)
+        msg_small = b"CCA2"
+        c_small = pkcs15_enc(pk_small, msg_small)
+        
+        out.append(f"  Target Message: {msg_small}")
+        out.append(f"  Ciphertext: {c_small}")
+        
+        oracle = lambda c_test: bleichenbacher_padding_oracle(sk_small, c_test)
+        m_recovered_int = bleichenbacher_attack(pk_small, c_small, oracle, log_fn=lambda msg: out.append(msg))
+        
+        k_small = (pk_small[0].bit_length() + 7) // 8
+        em_recovered = m_recovered_int.to_bytes(k_small, 'big')
+        
+        try:
+            zero_idx = em_recovered.index(b"\x00", 2)
+            recovered_msg = em_recovered[zero_idx + 1:]
+            out.append(f"  Recovered Plaintext: {recovered_msg}")
+            out.append("  Attack Successful: " + ("YES" if recovered_msg == msg_small else "NO"))
+        except ValueError:
+            out.append("  Failed to parse recovered padding.")
         
         return "\n".join(out)
