@@ -97,9 +97,9 @@ function rsaEncrypt(pk: RsaKey, m: bigint): bigint {
 
 // Fixed toy 256-bit RSA key to prevent UI blocking during keygen
 const TOY_RSA_KEY: RsaKey = {
-	n: 66141445763155823528476839352668581005886470438171120401768688407421115160867n,
+	n: 61509946103327553561850424097879359280159796353285275644854074052618250590877n,
 	e: 65537n,
-	d: 13917540454341997232231011684705574041793393510903333116868512403698059635713n
+	d: 22261537934675469474244018023064841581920635282563785045108431663792380569793n
 };
 
 // ---- PA14 Math ----
@@ -396,6 +396,7 @@ function Pa14Card() {
 function Pa15Card() {
 	const [message, setMessage] = useState("Hello");
 	const [sigState, setSigState] = useState<{ sig: string, raw: boolean } | null>(null);
+	const [verifyLog, setVerifyLog] = useState<{ h_m: string, s_e: string, status: boolean } | null>(null);
 	const [m1Str, setM1] = useState("2");
 	const [m2Str, setM2] = useState("3");
 	const [forgeryLog, setForgeryLog] = useState<string[]>([]);
@@ -406,6 +407,7 @@ function Pa15Card() {
 				const m = BigInt(message);
 				const sig = modPow(m, TOY_RSA_KEY.d!, TOY_RSA_KEY.n);
 				setSigState({ sig: sig.toString(), raw: true });
+				setVerifyLog(null);
 			} catch (e) {
 				alert("Raw RSA requires integer message");
 			}
@@ -413,29 +415,40 @@ function Pa15Card() {
 			const hashed = hashToBigInt(message);
 			const sig = modPow(hashed, TOY_RSA_KEY.d!, TOY_RSA_KEY.n);
 			setSigState({ sig: sig.toString(), raw: false });
+			setVerifyLog(null);
 		}
 	};
 
-	const handleVerify = (tamper: boolean) => {
+	const handleVerify = () => {
 		if (!sigState) return;
-		let testMsg = message;
-		if (tamper) testMsg += "X";
 
 		if (sigState.raw) {
 			try {
-				const m = BigInt(testMsg);
+				const m = BigInt(message);
 				const s = BigInt(sigState.sig);
-				const valid = modPow(s, TOY_RSA_KEY.e, TOY_RSA_KEY.n) === m;
-				alert(`Verification: ${valid ? "VALID" : "INVALID"}`);
+				const s_e = modPow(s, TOY_RSA_KEY.e, TOY_RSA_KEY.n);
+				const valid = s_e === m;
+				setVerifyLog({ h_m: m.toString(), s_e: s_e.toString(), status: valid });
 			} catch (e) {
 				alert("Invalid state for raw verify");
 			}
 		} else {
-			const hashed = hashToBigInt(testMsg);
+			const hashed = hashToBigInt(message);
 			const s = BigInt(sigState.sig);
-			const valid = modPow(s, TOY_RSA_KEY.e, TOY_RSA_KEY.n) === hashed;
-			alert(`Verification: ${valid ? "VALID" : "INVALID"}`);
+			const s_e = modPow(s, TOY_RSA_KEY.e, TOY_RSA_KEY.n);
+			const valid = s_e === hashed;
+			setVerifyLog({ h_m: hashed.toString(), s_e: s_e.toString(), status: valid });
 		}
+	};
+
+	const handleTamper = () => {
+		// Strictly flip exactly 1 bit (the least significant bit of the first character)
+		setMessage(m => {
+			if (!m) return "\x01";
+			const flippedChar = String.fromCharCode(m.charCodeAt(0) ^ 1);
+			return flippedChar + m.slice(1);
+		});
+		setVerifyLog(null);
 	};
 
 	const handleForgeAttack = () => {
@@ -481,9 +494,19 @@ function Pa15Card() {
 						<p className="kv">Signature Generated ({sigState.raw ? "Raw" : "Hashed"}):</p>
 						<div className="hex" style={{ wordBreak: "break-all" }}>{sigState.sig}</div>
 						<div className="segment-row" style={{ marginTop: 10 }}>
-							<button onClick={() => handleVerify(false)}>Verify</button>
-							<button onClick={() => handleVerify(true)}>Tamper & Verify</button>
+							<button onClick={handleVerify}>Verify</button>
+							<button onClick={handleTamper}>Tamper Message</button>
 						</div>
+						{verifyLog && (
+							<div className="step-card" style={{ marginTop: 15 }}>
+								<p className="kv">Intermediate Values:</p>
+								<p className="kv" style={{ paddingLeft: 10 }}>H(m) {sigState.raw ? "(Raw)" : ""}: <span className="hex" style={{ fontSize: '0.8rem' }}>{verifyLog.h_m}</span></p>
+								<p className="kv" style={{ paddingLeft: 10 }}>σ^e mod N: <span className="hex" style={{ fontSize: '0.8rem' }}>{verifyLog.s_e}</span></p>
+								<div style={{ marginTop: 10, fontSize: "1.1rem", fontWeight: "bold", color: verifyLog.status ? "#4ade80" : "#f87171" }}>
+									Result: {verifyLog.status ? "VALID" : "INVALID"}
+								</div>
+							</div>
+						)}
 					</div>
 				)}
 			</div>
