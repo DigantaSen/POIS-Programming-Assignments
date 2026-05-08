@@ -292,6 +292,15 @@ export default function Pa03Panel() {
               </div>
             )}
 
+            {decrypted && phase === "revealed" && (
+              <div className="pa03-ct-display">
+                <div className="pa03-ct-row">
+                  <span className="pa03-ct-key">Dec(k, r, C*) =</span>
+                  <span className="mono pa03-ct-val">{decrypted}</span>
+                </div>
+              </div>
+            )}
+
             <button
               id="pa03-start-round"
               type="button"
@@ -320,12 +329,6 @@ export default function Pa03Panel() {
                 <span className="pa03-ct-key">C* =</span>
                 <span className="mono pa03-ct-val pa03-ct-long">{challenge.ctHex}</span>
               </div>
-              {decrypted && (
-                <div className="pa03-ct-row">
-                  <span className="pa03-ct-key">Dec(k, r, C*) =</span>
-                  <span className="mono pa03-ct-val">{decrypted}</span>
-                </div>
-              )}
             </div>
 
             <div className="pa03-guess-row">
