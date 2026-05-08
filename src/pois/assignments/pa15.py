@@ -19,6 +19,8 @@ def sign(sk: tuple, m: bytes) -> int:
     sigma = pow(h_int, d, N)
     return sigma
 
+Sign = sign
+
 
 def verify(pk: tuple[int, int], m: bytes, sigma: int) -> bool:
     """Verify RSA Digital Signature."""
@@ -32,6 +34,8 @@ def verify(pk: tuple[int, int], m: bytes, sigma: int) -> bool:
     # Verify
     return pow(sigma, e, N) == h_int
 
+Verify = verify
+
 
 def raw_sign(sk: tuple, m_int: int) -> int:
     """Insecure raw RSA signing (no hash)."""
@@ -43,6 +47,33 @@ def raw_verify(pk: tuple[int, int], m_int: int, sigma: int) -> bool:
     """Insecure raw RSA signature verification."""
     N, e = pk
     return pow(sigma, e, N) == m_int
+
+
+def euf_cma_game(pk: tuple[int, int], sk: tuple) -> bool:
+    """Simulates the EUF-CMA game. Returns True if adversary wins (breaks security)."""
+    queried_messages = set()
+    
+    def signing_oracle(m_bytes: bytes) -> int:
+        if len(queried_messages) >= 50:
+            raise ValueError("Oracle limit reached")
+        queried_messages.add(m_bytes)
+        return sign(sk, m_bytes)
+        
+    # Adversary queries 50 random messages
+    for i in range(50):
+        signing_oracle(f"Query {i}".encode())
+        
+    # Adversary tries to forge a signature for a brand new message
+    m_star = b"Target Forgery"
+    
+    # Since they can't exploit homomorphic properties on the hash,
+    # their best attempt is to guess or return a previous signature.
+    sigma_star = random.randint(1, pk[0] - 1)
+    
+    # Check if adversary won
+    if m_star not in queried_messages and verify(pk, m_star, sigma_star):
+        return True
+    return False
 
 
 class PA15(AssignmentModule):
@@ -98,5 +129,13 @@ class PA15(AssignmentModule):
         # Trying the same on secure sign
         out.append("  Attempting same attack on Hash-then-Sign structure...")
         out.append("  (Because H(m1)*H(m2) != H(m1*m2), this attack structurally fails.)")
+        out.append("")
+        
+        out.append("3. EUF-CMA Security Game:")
+        out.append("  Running game where adversary queries up to 50 signed messages...")
+        
+        adv_wins = euf_cma_game(pk, sk)
+        out.append(f"  Adversary attempts to forge signature for new m*...")
+        out.append(f"  Adversary successful? {'YES (Broken)' if adv_wins else 'NO (Secure)'}")
         
         return "\n".join(out)

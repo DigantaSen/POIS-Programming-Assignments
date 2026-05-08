@@ -181,7 +181,7 @@ interface ElGamalRound {
 	ciphertext: ElGamalCiphertext;
 	tamperedCiphertext: ElGamalCiphertext;
 	decrypted: number;
-	tamperedDecrypted: number;
+	tamperedDecrypted: number | null;
 }
 
 interface CcaRound {
@@ -432,16 +432,7 @@ function otReceiverStep2(
 	return elgamalDecrypt(state.secretKey, state.choice === 0 ? c0 : c1);
 }
 
-function otCheatAttempt(
-	state: OtState,
-	c0: ElGamalCiphertext,
-	c1: ElGamalCiphertext,
-): number | null {
-	void state;
-	void c0;
-	void c1;
-	return null;
-}
+
 
 function obliviousTransfer(
 	messages: [number, number],
@@ -494,9 +485,6 @@ function secureAndWithTranscript(
 	};
 }
 
-function secureAnd(aliceBit: Bit, bobBit: Bit): Bit {
-	return secureAndWithTranscript(aliceBit, bobBit).outputBit;
-}
 
 function secureXorWithTranscript(
 	aliceBit: Bit,
@@ -515,9 +503,6 @@ function secureXorWithTranscript(
 	};
 }
 
-function secureXor(aliceBit: Bit, bobBit: Bit): Bit {
-	return secureXorWithTranscript(aliceBit, bobBit).outputBit;
-}
 
 function secureNot(aliceBit: Bit): Bit {
 	return aliceBit === 0 ? 1 : 0;
@@ -692,6 +677,7 @@ function ElGamalCard() {
 			message: messageValue,
 			ciphertext,
 			tamperedCiphertext,
+			decrypted: elgamalDecrypt(sk, ciphertext),
 			tamperedDecrypted: null,
 		};
 	}
@@ -999,8 +985,8 @@ function Pa17Card() {
 
 function Pa18Card() {
 	const [choice, setChoice] = useState<Bit | null>(null);
-	const [m0, setM0] = useState(11);
-	const [m1, setM1] = useState(42);
+	const [m0] = useState(11);
+	const [m1] = useState(42);
 	const [round, setRound] = useState<Pa18Round | null>(null);
 
 	function runOtRound(choiceBit: Bit, left: number, right: number): Pa18Round {
@@ -1012,7 +998,6 @@ function Pa18Card() {
 			right,
 		);
 		const selected = otReceiverStep2(state, ciphertexts[0], ciphertexts[1]);
-		const cheated = otCheatAttempt(state, ciphertexts[0], ciphertexts[1]);
 		return {
 			choice: choiceBit,
 			m0: left,
