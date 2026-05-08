@@ -245,11 +245,17 @@ function Pa13Card() {
 	const runTest = (targetVal: string) => {
 		try {
 			const n = BigInt(targetVal);
+			const iter = 100;
+			let fermatResult = false;
+			let mr: { prime: boolean, witnesses: string[] } | null = null;
+			
 			const st = performance.now();
-			const fermatResult = fermatTest(n);
-			const mr = millerRabin(n, rounds);
-			const time = performance.now() - st;
-			setResult({ prime: mr.prime, time, witnesses: mr.witnesses, fermatOk: fermatResult });
+			for (let i = 0; i < iter; i++) {
+				fermatResult = fermatTest(n);
+				mr = millerRabin(n, rounds);
+			}
+			const time = Math.max((performance.now() - st) / iter, 0.0001); // fallback to min 0.1us
+			setResult({ prime: mr!.prime, time, witnesses: mr!.witnesses, fermatOk: fermatResult });
 		} catch (e) {
 			alert("Invalid integer");
 		}
@@ -279,7 +285,7 @@ function Pa13Card() {
 				<div className="step-card">
 					<div className="step-head">
 						<strong>Result: {result.prime ? "PROBABLY PRIME" : "COMPOSITE"}</strong>
-						<span className="status-pill">{result.time.toFixed(2)} ms</span>
+						<span className="status-pill">{result.time < 0.01 ? (result.time * 1000).toFixed(1) + " µs" : result.time.toFixed(2) + " ms"}</span>
 					</div>
 					<p className="kv">Fermat Test (Base 2): {result.fermatOk ? "PRIME" : "COMPOSITE"}</p>
 					{numStr === "561" && (
